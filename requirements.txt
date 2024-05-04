@@ -1,0 +1,10 @@
+streamlit==1.31.0
+langchain==0.1.17
+langchain-community==0.0.36
+langchain-core==0.1.50
+langchain-text-splitters==0.0.1
+gigachain==0.1.16
+gigachain-community==0.0.33.1
+gigachain-core==0.1.43.1
+gigachain-text-splitters==0.0.1
+gigachat==0.1.23
