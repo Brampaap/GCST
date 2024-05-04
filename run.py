@@ -1,5 +1,4 @@
 import streamlit as st
-import os
 
 from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from langchain.chat_models.gigachat import GigaChat
@@ -7,7 +6,7 @@ from langchain.chat_models.gigachat import GigaChat
 st.title("Интеллектуальный тренажер для сотрудников")
 # Авторизация в сервисе GigaChat
 chat = GigaChat(
-    credentials=os.environ["GIGAAUTH"],
+    credentials=st.secrets["GIGAAUTH"],
     verify_ssl_certs=False,
 )
 
