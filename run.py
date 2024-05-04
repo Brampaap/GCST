@@ -138,10 +138,3 @@ if st.session_state.curr_answer < st.session_state.n_answers:
                 )
 else:
     st.write("Задание завершено, спасибо!")
-# # Ввод пользователя
-# user_input = "input(User: "
-# messages.append(HumanMessage(content=user_input))
-# res = chat(messages)
-# messages.append(res)
-# # Ответ модели
-# st.write("Bot: ", res.content)
