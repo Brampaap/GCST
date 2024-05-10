@@ -3,13 +3,16 @@ import streamlit as st
 from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from langchain.chat_models.gigachat import GigaChat
 
-st.markdown('''
+st.markdown(
+    """
 <style>
 .stApp [data-testid="stToolbar"]{
     display:none;
 }
 </style>
-''', unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 chat = GigaChat(
     credentials=st.secrets["GIGAAUTH"],
@@ -111,10 +114,13 @@ if st.session_state.curr_answer < st.session_state.n_answers:
 
         with st.chat_message("assistant"):
             res = chat(st.session_state.prompts).content
-            answer, rep_part = res.split('Итоговая оценка')
+            answer, rep_part = res.split("Итоговая оценка")
             st.write(f"{trainer_prefix}\n{answer}")
 
-            report = ["Дополнительная рекомендация", f"Итоговая оценка {rep_part}",]
+            report = [
+                "Дополнительная рекомендация",
+                f"Итоговая оценка {rep_part}",
+            ]
             target = [
                 "Эталонный ответ",
                 dialog[st.session_state.curr_answer][target_idx],
@@ -123,7 +129,7 @@ if st.session_state.curr_answer < st.session_state.n_answers:
                 st.write(report[1])
             with st.expander(target[0]):
                 st.write(target[1])
-        
+
             st.session_state.messages.append(
                 {
                     "role": "assistant",
