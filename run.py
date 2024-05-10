@@ -16,13 +16,13 @@ st.markdown(
 )
 
 chat = GigaChat(
-    credentials="MzE5Yjk3NzQtMzUwZC00ZGI4LTk1MGEtMmVlNWYxYjU0OGY5OjVmNzU1YzljLTcwN2ItNGIwMC04OTIwLTRlOTY2MGUwMTk1MA==",  # st.secrets["GIGAAUTH"],
+    credentials=st.secrets["GIGAAUTH"],
     verify_ssl_certs=False,
     model="GigaChat-Pro",
 )
 
 chat_lite = GigaChat(
-    credentials="MzE5Yjk3NzQtMzUwZC00ZGI4LTk1MGEtMmVlNWYxYjU0OGY5OjVmNzU1YzljLTcwN2ItNGIwMC04OTIwLTRlOTY2MGUwMTk1MA==",  # st.secrets["GIGAAUTH"],
+    credentials=st.secrets["GIGAAUTH"],
     verify_ssl_certs=False,
 )
 prompts = [
@@ -139,9 +139,11 @@ if st.session_state.curr_answer < st.session_state.n_answers:
             except ValueError:
                 answer = res
                 rep_part = ""
-    
-            answer = f"{answer}\nИтоговая оценка: {int(rep_part[:3])+typo_score} из 21.\n"
-                
+
+            answer = (
+                f"{answer}\nИтоговая оценка: {int(rep_part[:3])+typo_score} из 21.\n"
+            )
+
             rep_part = rep_part[10:]
 
             if typo_score == 5:
