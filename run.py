@@ -12,7 +12,7 @@ st.markdown('''
 ''', unsafe_allow_html=True)
 
 chat = GigaChat(
-    credentials="MzE5Yjk3NzQtMzUwZC00ZGI4LTk1MGEtMmVlNWYxYjU0OGY5OjY0MGZhNTMzLTNjNmEtNDgxYS1iMmFkLTE0MjY0NGY3NjhmNQ==",  # st.secrets["GIGAAUTH"],
+    credentials=st.secrets["GIGAAUTH"],
     verify_ssl_certs=False,
     model="GigaChat-Pro",
 )
