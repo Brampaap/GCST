@@ -20,6 +20,11 @@ chat = GigaChat(
     verify_ssl_certs=False,
     model="GigaChat-Pro",
 )
+
+chat_lite = GigaChat(
+    credentials=st.secrets["GIGAAUTH"],
+    verify_ssl_certs=False,
+)
 prompts = [
     SystemMessage(
         content='\
@@ -109,7 +114,7 @@ if st.session_state.curr_answer < st.session_state.n_answers:
                 content=f"Перепиши текст, исправив грамматические, орфографические и пунктуационные ошибки в тексте.\nТекст: {content}\nИсправленный текст:"
             )
         ]
-        res_typo = chat(prompts_typo).content
+        res_typo = chat_lite(prompts_typo).content
         typo_score = 5 - min(distance(content, res_typo), 5)
 
         prompt = f"{client_prefix} {st.session_state.next_content[client_idx]}\n\
