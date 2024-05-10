@@ -16,13 +16,13 @@ st.markdown(
 )
 
 chat = GigaChat(
-    credentials=st.secrets["GIGAAUTH"],
+    credentials="MzE5Yjk3NzQtMzUwZC00ZGI4LTk1MGEtMmVlNWYxYjU0OGY5OjVmNzU1YzljLTcwN2ItNGIwMC04OTIwLTRlOTY2MGUwMTk1MA==",  # st.secrets["GIGAAUTH"],
     verify_ssl_certs=False,
     model="GigaChat-Pro",
 )
 
 chat_lite = GigaChat(
-    credentials=st.secrets["GIGAAUTH"],
+    credentials="MzE5Yjk3NzQtMzUwZC00ZGI4LTk1MGEtMmVlNWYxYjU0OGY5OjVmNzU1YzljLTcwN2ItNGIwMC04OTIwLTRlOTY2MGUwMTk1MA==",  # st.secrets["GIGAAUTH"],
     verify_ssl_certs=False,
 )
 prompts = [
@@ -81,6 +81,7 @@ if "messages" not in st.session_state:
     st.session_state.messages.append(
         {
             "role": "assistant",
+            "avatar": "👩‍🏫",
             "content_type": ["text"],
             "content": [st.session_state.next_content][client_idx],
         }
@@ -92,7 +93,7 @@ st.title("Интеллектуальный тренажер для сотруд�
 
 # Cache
 for x in st.session_state.messages:
-    with st.chat_message(x["role"]):
+    with st.chat_message(name=x["role"], avatar=x["avatar"]):
         for i, content_type in enumerate(x["content_type"]):
             if content_type == "text":
                 st.write(x["content"][i])
@@ -103,10 +104,15 @@ for x in st.session_state.messages:
 # Main application loop
 if st.session_state.curr_answer < st.session_state.n_answers:
     if content := st.chat_input("Ваш ответ:"):
-        with st.chat_message("user"):
+        with st.chat_message("user", avatar="🙂"):
             st.write(content)
             st.session_state.messages.append(
-                {"role": "user", "content_type": ["text"], "content": [content]}
+                {
+                    "role": "user",
+                    "avatar": "🙂",
+                    "content_type": ["text"],
+                    "content": [content],
+                }
             )
 
         prompts_typo = [
@@ -124,19 +130,18 @@ if st.session_state.curr_answer < st.session_state.n_answers:
 
         st.session_state.prompts.append(HumanMessage(content=prompt))
 
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant", avatar="👩‍🏫"):
             res = ""
             with st.spinner(text="Анализирую ваш ответ..."):
                 res = chat(st.session_state.prompts).content
             try:
-                answer, rep_part = res.split("\nИтоговая оценка:")
+                answer, rep_part = res.split("Итоговая оценка:")
             except ValueError:
                 answer = res
                 rep_part = ""
-
-            answer = (
-                f"{answer}\nИтоговая оценка: {int(rep_part[:3])+typo_score} из 21.\n"
-            )
+    
+            answer = f"{answer}\nИтоговая оценка: {int(rep_part[:3])+typo_score} из 21.\n"
+                
             rep_part = rep_part[10:]
 
             if typo_score == 5:
@@ -163,6 +168,7 @@ if st.session_state.curr_answer < st.session_state.n_answers:
             st.session_state.messages.append(
                 {
                     "role": "assistant",
+                    "avatar": "👩‍🏫",
                     "content_type": ["text", "expand"],
                     "content": [
                         f"{trainer_prefix}\n{message_typo}\n{answer}",
@@ -182,12 +188,13 @@ if st.session_state.curr_answer < st.session_state.n_answers:
         if st.session_state.curr_answer < st.session_state.n_answers:
             st.session_state.next_content = dialog[st.session_state.curr_answer]
 
-            with st.chat_message("assistant"):
+            with st.chat_message("assistant", avatar="👩‍🏫"):
                 st.write(st.session_state.next_content[client_idx])
 
             st.session_state.messages.append(
                 {
                     "role": "assistant",
+                    "avatar": "👩‍🏫",
                     "content_type": ["text"],
                     "content": [st.session_state.next_content[client_idx]],
                 }
@@ -196,7 +203,7 @@ if st.session_state.curr_answer < st.session_state.n_answers:
     if st.session_state.curr_answer > 0 and st.button("↻ Повторить задание"):
         st.session_state.curr_answer -= 1
         st.session_state.next_content = dialog[st.session_state.curr_answer]
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant", avatar="👩‍🏫"):
             st.write(st.session_state.next_content[client_idx])
 
         st.session_state.messages = st.session_state.messages[:-3]
@@ -207,7 +214,7 @@ else:
     if st.button("↻ Повторить задание"):
         st.session_state.curr_answer -= 1
         st.session_state.next_content = dialog[st.session_state.curr_answer]
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant", avatar="👩‍🏫"):
             st.write(st.session_state.next_content[client_idx])
 
         st.session_state.messages = st.session_state.messages[:-2]
