@@ -1,37 +1,39 @@
 import streamlit as st
 
 from langchain.schema import HumanMessage, SystemMessage
-from langchain.chat_models.gigachat import GigaChat 
+from langchain.chat_models.gigachat import GigaChat
+from Levenshtein import distance
 
-st.markdown('''
+st.markdown(
+    """
 <style>
 .stApp [data-testid="stToolbar"]{
     display:none;
 }
 </style>
-''', unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 chat = GigaChat(
     credentials=st.secrets["GIGAAUTH"],
     verify_ssl_certs=False,
     model="GigaChat-Pro",
 )
-
 prompts = [
     SystemMessage(
         content='\
 Ты инструктор колл-центра с опытом более 10 лет.\n\
 Оцени ответ [Сотрудник] на запрос [Клиент], зная правильны ответ [Эталон] по критериям:\n\
-1. Граматические ошибки: Определи грамматические ошибки в ответе [Сотрудник]\n\
-2. Смысловая схожесть: Сравни ответ сотрудника с эталоном.\n\
-3. Клиентоориентированность: Оцени уровень сервиса в ответе сотрудника. Обрати внимание на общее впечатление от обращения к клиенту. Обращение на "ты" считается асолютно недопустимым.\n\
-4. Использование эмоджи: Проанализируй использование эмоджи только в ответе сотрудника. {Уместно. Оценка: 1 / Отсутствие/Неуместно. Оценка: 0} \n\
-5. Понятность текста: Оцени структуру и ясность ответа в ответе сотрудника. Проверь, насколько легко текст может быть понят клиенту.\n\
-Каждому пункту должна соответствовать численная оценка от 1 до 5, где 5 означает отличное соответствие стандартам, а 1 — значительное отклонение.\n\
+1. Смысловая схожесть: Сравни ответ сотрудника с эталоном.\n\
+2. Клиентоориентированность: Оцени уровень сервиса в ответе сотрудника. Обрати внимание на общее впечатление от обращения к клиенту. Обращение на "ты" считается асолютно недопустимым.\n\
+3. Использование эмоджи: Проанализируй использование эмоджи только в ответе сотрудника. {Уместно. Оценка: 1 / Отсутствие/Неуместно. Оценка: 0} \n\
+4. Понятность текста: Оцени структуру и ясность ответа в ответе сотрудника. Проверь, насколько легко текст может быть понят клиенту.\n\
+Каждому пункту, кроме "Использование эмоджи", должна соответствовать численная оценка от 0 до 5, где 5 означает отличное соответствие стандартам, а 0 — значительное отклонение.\n\
 Обоснуй каждую оценку, указывая конкретные примеры из текста.\n\
 \n\
 В самом конце предоставь итог с рекомендациями для улучшения текущего ответа сотрудника.\n\
-Общая возможная сумма баллов = 21.\
+Итог начинай фразой "Итоговая оценка: X из 16.\nРекомендация:"\
 '
     )
 ]
@@ -78,7 +80,6 @@ if "messages" not in st.session_state:
             "content": [st.session_state.next_content][client_idx],
         }
     )
-
     st.session_state.prompts = prompts
     st.session_state.n_answers = len(dialog)
 
@@ -92,7 +93,7 @@ for x in st.session_state.messages:
                 st.write(x["content"][i])
             elif content_type == "expand":
                 with st.expander(x["content"][i][0]):
-                    st.write(st.write(x["content"][i][1]))
+                    st.write(x["content"][i][1])
 
 # Main application loop
 if st.session_state.curr_answer < st.session_state.n_answers:
@@ -103,34 +104,70 @@ if st.session_state.curr_answer < st.session_state.n_answers:
                 {"role": "user", "content_type": ["text"], "content": [content]}
             )
 
+        prompts_typo = [
+            HumanMessage(
+                content=f"Перепиши текст, исправив грамматические, орфографические и пунктуационные ошибки в тексте.\nТекст: {content}\nИсправленный текст:"
+            )
+        ]
+        res_typo = chat(prompts_typo).content
+        typo_score = 5 - min(distance(content, res_typo), 5)
+
         prompt = f"{client_prefix} {st.session_state.next_content[client_idx]}\n\
                     {reference_prefix} {st.session_state.next_content[target_idx]}\n\
-                    {user_prefix} {content}\n\
+                    {user_prefix} {content}\
                     "
+
         st.session_state.prompts.append(HumanMessage(content=prompt))
 
         with st.chat_message("assistant"):
-            res = chat(st.session_state.prompts).content
-            answer, rep_part = res.split('Итоговая оценка')
-            st.write(f"{trainer_prefix}\n{answer}")
+            res = ""
+            with st.spinner(text="Анализирую ваш ответ..."):
+                res = chat(st.session_state.prompts).content
+            try:
+                answer, rep_part = res.split("\nИтоговая оценка:")
+            except ValueError:
+                answer = res
+                rep_part = ""
 
-            report = ["Дополнительная рекомендация", f"Итоговая оценка {rep_part}",]
+            answer = (
+                f"{answer}\nИтоговая оценка: {int(rep_part[:3])+typo_score} из 21.\n"
+            )
+            rep_part = rep_part[10:]
+
+            if typo_score == 5:
+                message_typo = "\nОценка Грамматики: Ошибок нет. Оценка: 5/5."
+            else:
+                message_typo = f'\nОценка Грамматики: Найдены опечатки. Исходное сообщение: "{content}", Исправленное сообщение: "{res_typo}". Оценка: {typo_score}/5.'
+
+            st.write(f"{trainer_prefix}\n{message_typo}\n{answer}")
+
+            report = [
+                "Дополнительная рекомендация",
+                rep_part,
+            ]
             target = [
                 "Эталонный ответ",
                 dialog[st.session_state.curr_answer][target_idx],
             ]
-            with st.expander(report[0]):
-                st.write(report[1])
             with st.expander(target[0]):
                 st.write(target[1])
-        
+            if report[1]:
+                with st.expander(report[0]):
+                    st.write(report[1])
+
             st.session_state.messages.append(
                 {
                     "role": "assistant",
-                    "content_type": ["text", "expand", "expand"],
-                    "content": [f"{trainer_prefix}\n{answer}", target, report],
+                    "content_type": ["text", "expand"],
+                    "content": [
+                        f"{trainer_prefix}\n{message_typo}\n{answer}",
+                        target,
+                    ],
                 }
             )
+            if report[1]:
+                st.session_state.messages[-1]["content_type"].append("expand")
+                st.session_state.messages[-1]["content"].append(report)
 
         # Clean conversation history
         st.session_state.prompts = st.session_state.prompts[:-1]
