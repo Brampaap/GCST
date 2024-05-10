@@ -3,6 +3,14 @@ import streamlit as st
 from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from langchain.chat_models.gigachat import GigaChat
 
+st.markdown('''
+<style>
+.stApp [data-testid="stToolbar"]{
+    display:none;
+}
+</style>
+''', unsafe_allow_html=True)
+
 chat = GigaChat(
     credentials="MzE5Yjk3NzQtMzUwZC00ZGI4LTk1MGEtMmVlNWYxYjU0OGY5OjY0MGZhNTMzLTNjNmEtNDgxYS1iMmFkLTE0MjY0NGY3NjhmNQ==",  # st.secrets["GIGAAUTH"],
     verify_ssl_certs=False,
