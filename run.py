@@ -140,7 +140,7 @@ if st.session_state.curr_answer < st.session_state.n_answers:
 
                 with st.spinner(text="Анализирую ваш ответ..."):
                     # Type checking
-                    res_typo = "тест" #chat_lite(prompts_typo).content
+                    res_typo = chat_lite(prompts_typo).content
                     typo_score = 5 - min(distance(content, res_typo), 5)
 
                     prompt = f"{client_prefix} {st.session_state.next_content[client_idx]}\n\
@@ -149,8 +149,8 @@ if st.session_state.curr_answer < st.session_state.n_answers:
                                 "
 
                     st.session_state.prompts.append(HumanMessage(content=prompt))
-
-                    res = "тест" #chat(st.session_state.prompts).content
+                    # Main analysis
+                    res = chat(st.session_state.prompts).content
                     try:
                         answer, rep_part = res.split("Итоговая оценка:")
                     except ValueError:
