@@ -157,7 +157,7 @@ if st.session_state.curr_answer < st.session_state.n_answers:
                         answer = res
                         rep_part = " 0 "
 
-                task_score = int(rep_part[:3]) + typo_score
+                task_score = min(int(rep_part[:3]) + typo_score, 21)
 
                 answer = f"{answer}\n\nИтоговая оценка: {task_score} из {max_score_per_task}.\n\n"
                 st.session_state.final_score.append(task_score)
