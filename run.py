@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit.components.v1 import html
 
 from langchain.schema import HumanMessage, SystemMessage
 from langchain.chat_models.gigachat import GigaChat
@@ -10,19 +11,23 @@ st.markdown(
 .stApp [data-testid="stToolbar"]{
     display:none;
 }
+.st-emotion-cache-qcqlej{
+    display:none;
+}
+
 </style>
 """,
     unsafe_allow_html=True,
 )
 
 chat = GigaChat(
-    credentials=st.secrets["GIGAAUTH"],
+    credentials="MzE5Yjk3NzQtMzUwZC00ZGI4LTk1MGEtMmVlNWYxYjU0OGY5OjVjNzBjZjllLWM3YzUtNGI5Yy1hYTM2LWRiODc0MjczZDRlZg==",
     verify_ssl_certs=False,
     model="GigaChat-Pro",
 )
 
 chat_lite = GigaChat(
-    credentials=st.secrets["GIGAAUTH"],
+    credentials="MzE5Yjk3NzQtMzUwZC00ZGI4LTk1MGEtMmVlNWYxYjU0OGY5OjVjNzBjZjllLWM3YzUtNGI5Yy1hYTM2LWRiODc0MjczZDRlZg==",
     verify_ssl_certs=False,
 )
 prompts = [
@@ -74,6 +79,24 @@ reference_prefix = "[Эталон]"
 client_prefix = "[Клиент]"
 trainer_prefix = "[Система]"
 
+if "initialized" not in st.session_state:
+    st.session_state.initialized = True
+    st.session_state.data_received = False
+    html(
+        """
+            <script>
+            window.parent.parent.postMessage({status: 'ready'}, '*');
+            </script>
+        """,
+        height=0,
+    )
+
+if "data" in st.query_params:
+    st.session_state.dialog = eval(st.query_params["data"])
+    st.session_state.data_received = True
+    dialog = st.session_state.dialog
+
+
 # Chat init
 if "messages" not in st.session_state:
     st.session_state.curr_answer = 0
@@ -88,10 +111,12 @@ if "messages" not in st.session_state:
         }
     )
     st.session_state.prompts = prompts
-    st.session_state.n_answers = min(len(dialog), 3)
+    st.session_state.n_answers = len(dialog) # min(len(dialog), 3)
     st.session_state.final_score = []
     st.session_state.disabled = False
+    st.session_state.data_received = False
 
+placeholder = st.empty()
 st.title("Интеллектуальный тренажер для сотрудников")
 
 # Cache
@@ -113,12 +138,16 @@ def get_string_diff(lstr, rstr):
     lstr = " ".join([f":red[{x}]" if x not in rwords else x for x in lstr.split(" ")])
     return lstr, rstr
 
+
 def disable():
     st.session_state["disabled"] = True
 
+
 # Main application loop
 if st.session_state.curr_answer < st.session_state.n_answers:
-    if content := st.chat_input("Ваш ответ:", disabled=st.session_state.disabled, on_submit=disable):
+    if content := st.chat_input(
+        "Ваш ответ:", disabled=st.session_state.disabled, on_submit=disable
+    ):
         if content.lstrip():
             with st.chat_message("user", avatar="🙂"):
                 st.write(content)
@@ -245,6 +274,13 @@ else:
         f'<h1 align="center">Ваш балл: {sum(st.session_state.final_score)}/{len(st.session_state.final_score) * max_score_per_task}\n\n({percent_result}%)</h1>',
         unsafe_allow_html=True,
     )
+    html(
+            f"""
+        <script>
+            window.parent.parent.postMessage({{result: {[sum(st.session_state.final_score), len(st.session_state.final_score) * max_score_per_task]}}}, "*")
+        </script>
+            """,
+        height=0)
     if st.button("↻ Повторить задание"):
         st.session_state.curr_answer -= 1
         st.session_state.next_content = dialog[st.session_state.curr_answer]
@@ -253,4 +289,5 @@ else:
 
         st.session_state.messages = st.session_state.messages[:-2]
         st.session_state.final_score = st.session_state.final_score[:-1]
+        
         st.rerun()

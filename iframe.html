@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>iFrame with Streamlit</title>
+</head>
+
+<body>
+    <div id="iframeContainer"></div>
+
+    <script>
+        window.addEventListener("message", function (event) {
+            console.log(event.data);
+        });
+        document.addEventListener("DOMContentLoaded", function () {
+            let array = [
+                [
+                    "Меня уже трясет от вашего контакт-центра. Объясните, на основании какого закона ваши сотрудники сами прерывают связь?",
+                    "Сожалею, что произошла такая ситуация. Расскажите, что у Вас случилось?",
+                ],
+                [
+                    "Жалобу пишите давайте!!!",
+                    "Я искренне хочу Вам помочь! Расскажите, пожалуйста, с каким вопросом Вы обращались?",
+                ],
+                [
+                    "Не надо спрашивать, какой у меня вопрос! Пишите жалобу!!!",
+                    "Хорошо. Давайте сверим Вашу фамилию, имя, отчество и дату рождения. Назовите, пожалуйста.",
+                ],
+                [
+                    "Зачем? Вы не можете сами найти? ... Александров Александр Александрович, 15 мая 1980. Что еще вам там от меня нужно?!",
+                    "Спасибо, я прямо сейчас сообщу руководителю об этой ситуации, он примет все меры.",
+                ],
+                [
+                    "Лишите премии нерадивого! Я не хочу в следующий раз тратить столько время на вас. Информацию передали?",
+                    "Да, будьте уверены. Я желаю Вам помочь, с каким вопросом Вы обращались?",
+                ],
+                ["Нет, я уже все узнал. До свидания.", "Всего доброго!"]
+            ];
+
+
+            let jsonString = JSON.stringify(array);
+            let encodedJson = encodeURIComponent(jsonString);
+
+
+            var url = "http://localhost:8501?data=" + encodedJson;
+
+            var iframe = document.createElement('iframe');
+            iframe.src = url;
+            iframe.width = "600";
+            iframe.height = "1000";
+            iframe.frameBorder = "0";
+
+            var container = document.getElementById('iframeContainer');
+            container.appendChild(iframe);
+        });
+
+
+    </script>
+</body>
+
+</html>
