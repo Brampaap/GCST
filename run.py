@@ -22,7 +22,7 @@ try:
     )
     
     chat = GigaChat(
-        credentials=os.environ["GIGAAUTH"],
+        credentials="test",
         verify_ssl_certs=False,
         model="GigaChat-Pro",
     )
@@ -293,6 +293,5 @@ try:
             st.rerun()
 
 except Exception as e:
-    print(e)
     st.error("Internal server error")
     st.stop()
