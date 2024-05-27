@@ -293,4 +293,5 @@ try:
             st.rerun()
 
 except:
-    raise RuntimeError("Internal server error")
+    st.error("Internal server error")
+    st.stop()
