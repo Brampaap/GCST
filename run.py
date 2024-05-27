@@ -292,6 +292,7 @@ try:
             
             st.rerun()
 
-except:
+except Exception as e:
+    print(e)
     st.error("Internal server error")
     st.stop()
