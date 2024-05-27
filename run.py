@@ -22,7 +22,7 @@ try:
     )
     
     chat = GigaChat(
-        credentials="test",
+        credentials=os.environ["GIGAAUTH"],
         verify_ssl_certs=False,
         model="GigaChat-Pro",
     )
