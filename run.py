@@ -21,13 +21,13 @@ st.markdown(
 )
 
 chat = GigaChat(
-    credentials="MzE5Yjk3NzQtMzUwZC00ZGI4LTk1MGEtMmVlNWYxYjU0OGY5OjVjNzBjZjllLWM3YzUtNGI5Yy1hYTM2LWRiODc0MjczZDRlZg==",
+    credentials=os.environ["GIGAAUTH"],
     verify_ssl_certs=False,
     model="GigaChat-Pro",
 )
 
 chat_lite = GigaChat(
-    credentials="MzE5Yjk3NzQtMzUwZC00ZGI4LTk1MGEtMmVlNWYxYjU0OGY5OjVjNzBjZjllLWM3YzUtNGI5Yy1hYTM2LWRiODc0MjczZDRlZg==",
+    credentials=os.environ["GIGAAUTH"],
     verify_ssl_certs=False,
 )
 prompts = [
