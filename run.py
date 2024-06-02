@@ -5,7 +5,6 @@ from streamlit.components.v1 import html
 from langchain.schema import HumanMessage, SystemMessage
 from langchain.chat_models.gigachat import GigaChat
 from Levenshtein import distance
-import pyperclip
 
 try:
     st.markdown(
@@ -129,6 +128,7 @@ try:
                 elif content_type == "expand":
                     with st.expander(x["content"][i][0]):
                         st.write(x["content"][i][1])
+
     def get_string_diff(lstr, rstr):
         rwords = set(rstr.split(" "))
         lwords = set(lstr.split(" "))
@@ -186,7 +186,9 @@ try:
                         except ValueError:
                             answer = res
                             rep_part = " 0 "
-                    task_score = min(int(rep_part[:3].replace("/", "")) + typo_score, 21)
+                    task_score = min(
+                        int(rep_part[:3].replace("/", "")) + typo_score, 21
+                    )
 
                     answer = f"{answer}\n\nИтоговая оценка: {task_score} из {max_score_per_task}.\n\n"
                     st.session_state.final_score.append(task_score)
