@@ -5,6 +5,7 @@ from streamlit.components.v1 import html
 from langchain.schema import HumanMessage, SystemMessage
 from langchain.chat_models.gigachat import GigaChat
 from Levenshtein import distance
+import pyperclip
 
 try:
     st.markdown(
@@ -111,7 +112,7 @@ try:
             }
         )
         st.session_state.prompts = prompts
-        st.session_state.n_answers = min(len(dialog), 3) #len(dialog)
+        st.session_state.n_answers = len(dialog)
         st.session_state.final_score = []
         st.session_state.disabled = False
         st.session_state.data_received = False
@@ -128,7 +129,6 @@ try:
                 elif content_type == "expand":
                     with st.expander(x["content"][i][0]):
                         st.write(x["content"][i][1])
-
     def get_string_diff(lstr, rstr):
         rwords = set(rstr.split(" "))
         lwords = set(lstr.split(" "))
@@ -250,7 +250,6 @@ try:
                     )
                 st.session_state["disabled"] = False
                 st.rerun()
-
         if st.session_state.curr_answer > 0 and st.button("↻ Повторить задание"):
             st.session_state.curr_answer -= 1
 
@@ -292,7 +291,8 @@ try:
             st.session_state.final_score = st.session_state.final_score[:-1]
 
             st.rerun()
+    st.subheader("🙁&emsp;🙂&emsp;😰&emsp;😢&emsp;🤗&emsp;😁&emsp;😡&emsp;✅&emsp;❌&emsp;👍")
 
-except Exception as e:
+except KeyboardInterrupt as e:
     st.error("Internal server error")
     st.stop()
