@@ -295,6 +295,6 @@ try:
             st.rerun()
     st.text("🙁\t🙂\t😢\t🤗\t😁\t😡\t✅\t❌\t👍")
 
-except KeyboardInterrupt as e:
+except Exception as e:
     st.error("Internal server error")
     st.stop()
