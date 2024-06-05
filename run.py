@@ -22,15 +22,6 @@ try:
         unsafe_allow_html=True,
     )
 
-    chat = GigaChat(
-        credentials=st.secrets["GIGAAUTH"],
-        verify_ssl_certs=False,
-        model="GigaChat-Pro",
-    )
-    chat_lite = GigaChat(
-        credentials=st.secrets["GIGAAUTH"],
-        verify_ssl_certs=False,
-    )
     prompts = [
         SystemMessage(
             content='\
@@ -38,9 +29,9 @@ try:
     Оцени ответ [Сотрудник] на запрос [Клиент], зная правильны ответ [Эталон] по критериям:\n\
     1. Смысловая схожесть: Сравни ответ сотрудника с эталоном.\n\
     2. Клиентоориентированность: Оцени уровень сервиса в ответе сотрудника. Обрати внимание на общее впечатление от обращения к клиенту. Обращение на "ты" считается асолютно недопустимым.\n\
-    3. Использование эмоджи: Проанализируй использование эмоджи только в ответе сотрудника. Если эмоджи улучшает ответ - Оценка: 5 или 4; Если использовались ухудшая/не улучшая ответ. Оценка: 2, 1 или 0; Если эмоджи отсутствуют - Оценка: 3} \n\
+    3. Использование эмоджи: Не используются - 3; Улучшают ответ - 5, 4; Ухудшают/не влияют на ответ - 2, 1, 0.\n\
     4. Понятность текста: Оцени структуру и ясность ответа в ответе сотрудника. Проверь, насколько легко текст может быть понят клиенту.\n\
-    Каждому пункту, должна соответствовать численная оценка от 0 до 5, где 5 означает отличное соответствие стандартам, а 0 — значительное отклонение.\n\
+    Каждому пункту (кроме эмоджи), должна соответствовать численная оценка от 0 до 5, где 5 означает отличное соответствие стандартам, а 0 — значительное отклонение.\n\
     Обоснуй каждую оценку, указывая конкретные примеры из текста.\n\
     \n\
     В самом конце предоставь итог с рекомендациями для улучшения текущего ответа сотрудника.\n\
@@ -74,13 +65,24 @@ try:
     ][:3]
     client_idx = 0
     target_idx = 1
-    max_score_per_task = 21
+    max_score_per_task = 25
     user_prefix = "[Сотрудник]"
     reference_prefix = "[Эталон]"
     client_prefix = "[Клиент]"
     trainer_prefix = "[Система]"
 
     if "initialized" not in st.session_state:
+        st.session_state.chat = GigaChat(
+            credentials=st.secrets["GIGAAUTH"],
+            verify_ssl_certs=False,
+            scope="GIGACHAT_API_CORP",
+            model="GigaChat-Pro",
+        )
+        st.session_state.chat_lite = GigaChat(
+            credentials=st.secrets["GIGAAUTH"],
+            scope="GIGACHAT_API_CORP",
+            verify_ssl_certs=False,
+        )
         st.session_state.initialized = True
         st.session_state.data_received = False
         html(
@@ -116,7 +118,6 @@ try:
         st.session_state.disabled = False
         st.session_state.data_received = False
 
-    placeholder = st.empty()
     st.title("Интеллектуальный тренажер для сотрудников")
 
     # Cache
@@ -144,156 +145,151 @@ try:
     def disable():
         st.session_state["disabled"] = True
 
-    # Main application loop
     if st.session_state.curr_answer < st.session_state.n_answers:
-        if content := st.chat_input(
-            "Ваш ответ:", disabled=st.session_state.disabled, on_submit=disable
-        ):
-            if content.lstrip():
-                with st.chat_message("user", avatar="🙂"):
-                    st.write(content)
-                    st.session_state.messages.append(
-                        {
-                            "role": "user",
-                            "avatar": "🙂",
-                            "content_type": ["text"],
-                            "content": [content],
-                        }
+        emoji_list = st.text("🙁\t🙂\t😢\t🤗\t😁\t😡\t✅\t❌\t👍")
+    else:
+        emoji_list = st.empty()
+    # Main application loop
+    if content := st.chat_input(
+        "Ваш ответ:", disabled=st.session_state.disabled, on_submit=disable
+    ):
+        if content.lstrip():
+            with st.chat_message("user", avatar="🙂"):
+                st.write(content)
+                st.session_state.messages.append(
+                    {
+                        "role": "user",
+                        "avatar": "🙂",
+                        "content_type": ["text"],
+                        "content": [content],
+                    }
+                )
+
+            with st.chat_message("assistant", avatar="👩‍🏫"):
+                prompts_typo = [
+                    HumanMessage(
+                        content=f"Перепиши текст, исправив грамматические, орфографические и пунктуационные ошибки в тексте.\nТекст: {content}\nИсправленный текст:"
                     )
+                ]
+
+                with st.spinner(text="Анализирую ваш ответ..."):
+                    # Type checking
+                    res_typo = st.session_state.chat_lite(prompts_typo).content
+                    typo_score = 5 - min(distance(content, res_typo), 5)
+
+                    prompt = f"{client_prefix} {st.session_state.next_content[client_idx]}\n\
+                                {reference_prefix} {st.session_state.next_content[target_idx]}\n\
+                                {user_prefix} {content}\
+                                "
+
+                    st.session_state.prompts.append(HumanMessage(content=prompt))
+                    # Main analysis
+                    res = st.session_state.chat(st.session_state.prompts).content
+                    try:
+                        answer, rep_part = res.split("Итоговая оценка:")
+                    except ValueError:
+                        answer = res
+                        rep_part = " 0 "
+                task_score = min(int(rep_part[:3].replace("/", "")) + typo_score, 21)
+
+                answer = f"{answer}\n\nИтоговая оценка: {task_score} из {max_score_per_task}.\n\n"
+                st.session_state.final_score.append(task_score)
+
+                rep_part = rep_part[10:]
+                lstr_typo, rstr_typo = get_string_diff(content, res_typo)
+                if typo_score == 5:
+                    message_typo = "Оценка Грамматики: Ошибок нет. Оценка: 5/5."
+                else:
+                    message_typo = f'Оценка Грамматики: Найдены опечатки.\n\nИсходное сообщение: "{lstr_typo}";\n\nИсправленное сообщение: "{rstr_typo}".\n\nОценка: {typo_score}/5.'
+
+                st.write(f"{trainer_prefix}\n{message_typo}\n{answer}")
+
+                report = [
+                    "Дополнительная рекомендация",
+                    rep_part,
+                ]
+                target = [
+                    "Эталонный ответ",
+                    dialog[st.session_state.curr_answer][target_idx],
+                ]
+                with st.expander(target[0]):
+                    st.write(target[1])
+                if report[1]:
+                    with st.expander(report[0]):
+                        st.write(report[1])
+
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "avatar": "👩‍🏫",
+                        "content_type": ["text", "expand"],
+                        "content": [
+                            f"{trainer_prefix}\n\n{message_typo}\n\n{answer}",
+                            target,
+                        ],
+                    }
+                )
+                if report[1]:
+                    st.session_state.messages[-1]["content_type"].append("expand")
+                    st.session_state.messages[-1]["content"].append(report)
+            # Clean conversation history
+            st.session_state.prompts = st.session_state.prompts[:-1]
+
+            # Write next task
+            st.session_state.curr_answer += 1
+            if st.session_state.curr_answer < st.session_state.n_answers:
+                st.session_state.next_content = dialog[st.session_state.curr_answer]
 
                 with st.chat_message("assistant", avatar="👩‍🏫"):
-                    prompts_typo = [
-                        HumanMessage(
-                            content=f"Перепиши текст, исправив грамматические, орфографические и пунктуационные ошибки в тексте.\nТекст: {content}\nИсправленный текст:"
-                        )
-                    ]
+                    st.write(st.session_state.next_content[client_idx])
 
-                    with st.spinner(text="Анализирую ваш ответ..."):
-                        # Type checking
-                        res_typo = chat_lite(prompts_typo).content
-                        typo_score = 5 - min(distance(content, res_typo), 5)
-
-                        prompt = f"{client_prefix} {st.session_state.next_content[client_idx]}\n\
-                                    {reference_prefix} {st.session_state.next_content[target_idx]}\n\
-                                    {user_prefix} {content}\
-                                    "
-
-                        st.session_state.prompts.append(HumanMessage(content=prompt))
-                        # Main analysis
-                        res = chat(st.session_state.prompts).content
-                        try:
-                            answer, rep_part = res.split("Итоговая оценка:")
-                        except ValueError:
-                            answer = res
-                            rep_part = " 0 "
-                    task_score = min(
-                        int(rep_part[:3].replace("/", "")) + typo_score, 21
-                    )
-
-                    answer = f"{answer}\n\nИтоговая оценка: {task_score} из {max_score_per_task}.\n\n"
-                    st.session_state.final_score.append(task_score)
-
-                    rep_part = rep_part[10:]
-                    lstr_typo, rstr_typo = get_string_diff(content, res_typo)
-                    if typo_score == 5:
-                        message_typo = "Оценка Грамматики: Ошибок нет. Оценка: 5/5."
-                    else:
-                        message_typo = f'Оценка Грамматики: Найдены опечатки.\n\nИсходное сообщение: "{lstr_typo}";\n\nИсправленное сообщение: "{rstr_typo}".\n\nОценка: {typo_score}/5.'
-
-                    st.write(f"{trainer_prefix}\n{message_typo}\n{answer}")
-
-                    report = [
-                        "Дополнительная рекомендация",
-                        rep_part,
-                    ]
-                    target = [
-                        "Эталонный ответ",
-                        dialog[st.session_state.curr_answer][target_idx],
-                    ]
-                    with st.expander(target[0]):
-                        st.write(target[1])
-                    if report[1]:
-                        with st.expander(report[0]):
-                            st.write(report[1])
-
-                    st.session_state.messages.append(
-                        {
-                            "role": "assistant",
-                            "avatar": "👩‍🏫",
-                            "content_type": ["text", "expand"],
-                            "content": [
-                                f"{trainer_prefix}\n\n{message_typo}\n\n{answer}",
-                                target,
-                            ],
-                        }
-                    )
-                    if report[1]:
-                        st.session_state.messages[-1]["content_type"].append("expand")
-                        st.session_state.messages[-1]["content"].append(report)
-
-                # Clean conversation history
-                st.session_state.prompts = st.session_state.prompts[:-1]
-
-                # Write next task
-                st.session_state.curr_answer += 1
-                if st.session_state.curr_answer < st.session_state.n_answers:
-                    st.session_state.next_content = dialog[st.session_state.curr_answer]
-
-                    with st.chat_message("assistant", avatar="👩‍🏫"):
-                        st.write(st.session_state.next_content[client_idx])
-
-                    st.session_state.messages.append(
-                        {
-                            "role": "assistant",
-                            "avatar": "👩‍🏫",
-                            "content_type": ["text"],
-                            "content": [st.session_state.next_content[client_idx]],
-                        }
-                    )
-                st.session_state["disabled"] = False
-                st.rerun()
-        if st.session_state.curr_answer > 0 and st.button("↻ Повторить задание"):
-            st.session_state.curr_answer -= 1
-
-            st.session_state.next_content = dialog[st.session_state.curr_answer]
-            with st.chat_message("assistant", avatar="👩‍🏫"):
-                st.write(st.session_state.next_content[client_idx])
-
-            st.session_state.messages = st.session_state.messages[:-3]
-            st.session_state.final_score = st.session_state.final_score[:-1]
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "avatar": "👩‍🏫",
+                        "content_type": ["text"],
+                        "content": [st.session_state.next_content[client_idx]],
+                    }
+                )
+            st.session_state["disabled"] = (
+                st.session_state.curr_answer >= st.session_state.n_answers
+            )
             st.rerun()
+    if st.session_state.curr_answer > 0 and st.button("↻ Повторить задание"):
+        st.session_state.curr_answer -= 1
 
-    else:
-        st.write("Задание завершено, спасибо!")
+        st.session_state.next_content = dialog[st.session_state.curr_answer]
+        with st.chat_message("assistant", avatar="👩‍🏫"):
+            st.write(st.session_state.next_content[client_idx])
+
+        st.session_state.messages = st.session_state.messages[:-2]
+        st.session_state.final_score = st.session_state.final_score[:-1]
+        st.session_state["disabled"] = False
+        st.rerun()
+    if st.session_state.curr_answer >= st.session_state.n_answers:
         percent_result = round(
             sum(st.session_state.final_score)
             / (len(st.session_state.final_score) * max_score_per_task)
             * 100,
             2,
         )
-        st.markdown(
-            f'<h1 align="center">Ваш балл: {sum(st.session_state.final_score)}/{len(st.session_state.final_score) * max_score_per_task}\n\n({percent_result}%)</h1>',
-            unsafe_allow_html=True,
-        )
+        with st.chat_message("assistant", avatar="👩‍🏫"):
+            st.write("Задание завершено, спасибо!")
+            st.markdown(
+                f'<h1 align="center">Ваш балл: {sum(st.session_state.final_score)}/{len(st.session_state.final_score) * max_score_per_task}\n\n({percent_result}%)</h1>',
+                unsafe_allow_html=True,
+            )
         html(
             f"""
             <script>
-                window.parent.parent.postMessage({{result: {[sum(st.session_state.final_score), len(st.session_state.final_score) * max_score_per_task]}}}, "*")
+                window.parent.parent.postMessage({{result: {[sum(st.session_state.final_score), len(st.session_state.final_score) * max_score_per_task]}}}, "*");
             </script>
                 """,
             height=0,
         )
-        if st.button("↻ Повторить задание"):
-            st.session_state.curr_answer -= 1
-            st.session_state.next_content = dialog[st.session_state.curr_answer]
-            with st.chat_message("assistant", avatar="👩‍🏫"):
-                st.write(st.session_state.next_content[client_idx])
 
-            st.session_state.messages = st.session_state.messages[:-2]
-            st.session_state.final_score = st.session_state.final_score[:-1]
-
-            st.rerun()
 
 except Exception as e:
+    print(e)
     st.error("Internal server error")
     st.stop()
