@@ -261,8 +261,8 @@ try:
         st.session_state.next_content = dialog[st.session_state.curr_answer]
         with st.chat_message("assistant", avatar="👩‍🏫"):
             st.write(st.session_state.next_content[client_idx])
-
-        st.session_state.messages = st.session_state.messages[:-2]
+        is_last_answer = int(st.session_state.curr_answer >= st.session_state.n_answers)
+        st.session_state.messages = st.session_state.messages[: (-3 + is_last_answer)]
         st.session_state.final_score = st.session_state.final_score[:-1]
         st.session_state["disabled"] = False
         st.rerun()
