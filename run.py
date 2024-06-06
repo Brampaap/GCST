@@ -118,7 +118,7 @@ try:
         st.session_state.disabled = False
         st.session_state.data_received = False
 
-    st.title("Интеллектуальный тренажер для сотрудников")
+    st.title("Тренажер чата")
 
     # Cache
     for x in st.session_state.messages:
