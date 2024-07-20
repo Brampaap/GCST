@@ -1,0 +1,14 @@
+{
+  "files": {
+    "main.css": "./static/css/main.a7093ba7.css",
+    "main.js": "./static/js/main.d548519d.js",
+    "static/media/SourceSansPro-Regular.otf": "./static/media/SourceSansPro-Regular.7a9975d8c02d6933c47d.otf",
+    "index.html": "./index.html",
+    "main.a7093ba7.css.map": "./static/css/main.a7093ba7.css.map",
+    "main.d548519d.js.map": "./static/js/main.d548519d.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.a7093ba7.css",
+    "static/js/main.d548519d.js"
+  ]
+}
