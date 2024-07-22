@@ -235,11 +235,10 @@ try:
                     )
                     
                     res_emoji = None
-                    if bool(emoji.distinct_emoji_list(input_msg)) and bool(
-                        emoji.distinct_emoji_list(
-                            st.session_state.next_dialog[TARGET_MSG_IND]
+                    emoji_in_msg = bool(emoji.distinct_emoji_list(input_msg))
+                    emoji_in_target = bool(emoji.distinct_emoji_list(st.session_state.next_dialog[TARGET_MSG_IND]))
                         )
-                    ):
+                    if emoji_in_msg and emoji_in_target:
                         prompt_content = f"{TARGET_PREFIX} {st.session_state.next_dialog[TARGET_MSG_IND]}\n\
                                            {USER_PREFIX} {input_msg}"
 
@@ -263,14 +262,12 @@ try:
                             emoji_score = (
                                 0  # FIXME: think about how to deal with such cases
                             )
-                    elif not bool(emoji.distinct_emoji_list(input_msg)) and not bool(
-                        emoji.distinct_emoji_list(
-                            st.session_state.next_dialog[TARGET_MSG_IND]
-                        )
-                    ):
+                    elif not emoji_in_msg and not emoji_in_target:
                         emoji_score = 100
+                    elif not emoji_in_msg and emoji_in_target:
+                        emoji_score = -1
                     else:
-                        emoji_score = 0
+                        emoji_score = -2
 
                     # Main analysis
                     prompt_content = f"{CLIENT_PREFIX} {st.session_state.next_dialog[CLIENT_MSG_IND]}\n\
@@ -312,10 +309,12 @@ try:
                         or "1. Использование эмоджи: Эмоджи не использовались. Оценка: 100%"
                     )
                 elif emoji_score == 0:
-                    message_emoji = (
-                        res_emoji
-                        or "1. Использование эмоджи: В одном из ответов нет эмоджи. Оценка: 0%"
+                    message_emoji = res_emoji
                     )
+                elif emoji_score == -1:
+                    message_emoji = "1. Использование эмоджи: В данной ситуации предусмотрено использование эмоджи. Оценка: 0%"
+                elif emoji_score == -2:
+                    message_emoji = "1. Использование эмоджи: В данной ситуации не предусмотрено использование эмоджи. Оценка: 0%"
                 else:
                     message_emoji = res_emoji
 
