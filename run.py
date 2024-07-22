@@ -237,7 +237,7 @@ try:
                     res_emoji = None
                     emoji_in_msg = bool(emoji.distinct_emoji_list(input_msg))
                     emoji_in_target = bool(emoji.distinct_emoji_list(st.session_state.next_dialog[TARGET_MSG_IND]))
-                        )
+                        
                     if emoji_in_msg and emoji_in_target:
                         prompt_content = f"{TARGET_PREFIX} {st.session_state.next_dialog[TARGET_MSG_IND]}\n\
                                            {USER_PREFIX} {input_msg}"
