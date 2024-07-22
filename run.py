@@ -308,7 +308,8 @@ try:
 
                 if emoji_score == MAX_SCORE_PER_TASK:
                     message_emoji = (
-                        res_emoji or "1. Использование эмоджи: Эмоджи не использовались. Оценка: 100%"
+                        res_emoji
+                        or "1. Использование эмоджи: Эмоджи не использовались. Оценка: 100%"
                     )
                 elif emoji_score == 0:
                     message_emoji = (
@@ -403,5 +404,5 @@ try:
 
 except Exception as e:
     print(e)
-    st.error("Internal server error")
+    st.error(e)
     st.stop()
