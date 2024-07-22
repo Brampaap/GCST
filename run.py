@@ -310,7 +310,6 @@ try:
                     )
                 elif emoji_score == 0:
                     message_emoji = res_emoji
-                    )
                 elif emoji_score == -1:
                     message_emoji = "1. Использование эмоджи: В данной ситуации предусмотрено использование эмоджи. Оценка: 0%"
                 elif emoji_score == -2:
