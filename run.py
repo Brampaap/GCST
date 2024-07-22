@@ -7,11 +7,11 @@ from langchain.schema import HumanMessage, SystemMessage
 from langchain.chat_models.gigachat import GigaChat
 from Levenshtein import distance
 
-js_scroll = '''
+js_scroll = """
 <script>
     itemsScrollTo = parent.window.document.getElementsByClassName("st-emotion-cache-0"); itemsScrollTo[itemsScrollTo.length-1].scrollIntoView();
 </script>
-'''
+"""
 
 try:
     custom_input = components.declare_component("custom_input", path="./frontend")
@@ -54,14 +54,14 @@ try:
         unsafe_allow_html=True,
     )
 
-
     system_prompt = SystemMessage(
         content='\
-        Ты - тренеражер центра поддержки. Твоя цель: сформировать у меня профессиональный навык написания ответов.\n\
+    Ты - тренеражер центра поддержки. Твоя цель: сформировать у меня профессиональный навык написания ответов.\n\
     Оцени последний ответ сотрудника по всем пунктам:\n\
     1. Смысловая схожесть: Сравни ответ сотрудника с верным ответом на предмет семантической схожести.\n\
     2. Клиентоориентированность: Оцени уровень сервиса в ответе сотрудника, какого общее впечатление от обращения к клиенту.\n\
-    3. Использование эмоджи: Эмоджи не используются - 0%; Используемые эмоджи улучшают ответ - 100% или 75%; Используемые эмоджи худшают/не влияют на ответ - 50% или 25% или 0%.\n\
+    3. Использование эмоджи: Если в верном ответе нет эмоджи и сотрудник его не указал, то оценка 100%\n\
+    0% может быть когда в одном ответе есть эмоджи, а в другом нет, либо когда в обоих есть, но сильно не совпадают, остальные случаи оцениваются согласно уместности применения.\n\
     4. Понятность текста: Оцени логическую структура и ясность ответа сотрудника. Насколько легко текст может быть понят клиентом.\n\
     \n\
     По каждому пункту напиши короткий <Комментарий> и поставь <Оценка> = {0, 25, 50, 75, 100}: "<Имя пункта>: <Комментарий>. Оценка: <Оценка>   %."'
@@ -164,8 +164,13 @@ try:
                 if content_type == "text":
                     st.write(msg_block["content"][i])
                 elif content_type == "expand":
-                    if st.session_state.show_reset_button or st.session_state.is_last_msg:
-                        if idx == len(st.session_state.messages) - (len(st.session_state.messages) % 3):
+                    if (
+                        st.session_state.show_reset_button
+                        or st.session_state.is_last_msg
+                    ):
+                        if idx == len(st.session_state.messages) - (
+                            len(st.session_state.messages) % 3
+                        ):
                             col1, col2 = st.columns([1, 3])
                             with col1:
                                 st.button(
@@ -180,15 +185,17 @@ try:
                         with st.expander(label=msg_block["content"][i][0]):
                             st.write(msg_block["content"][i][1])
 
-
     def get_string_diff(lstr, rstr):
         rwords = set(rstr.split(" "))
         lwords = set(lstr.split(" "))
 
-        rstr = " ".join([f":green[{x}]" if x not in lwords else x for x in rstr.split(" ")])
-        lstr = " ".join([f":red[{x}]" if x not in rwords else x for x in lstr.split(" ")])
+        rstr = " ".join(
+            [f":green[{x}]" if x not in lwords else x for x in rstr.split(" ")]
+        )
+        lstr = " ".join(
+            [f":red[{x}]" if x not in rwords else x for x in lstr.split(" ")]
+        )
         return lstr, rstr
-
 
     # Main application loop
     if st.session_state.show_input:
@@ -232,19 +239,23 @@ try:
                     res_rest = st.session_state.chat(prompt).content
 
                     rest_score = 0
-                    try: # Sometimes the response format may be incorrect
+                    try:  # Sometimes the response format may be incorrect
                         for x in res_rest.split("\n"):
-                            rest_score += int("".join(list(filter(str.isdigit, x.split("Оценка: ")[-1]))))
+                            rest_score += int(
+                                "".join(
+                                    list(filter(str.isdigit, x.split("Оценка: ")[-1]))
+                                )
+                            )
                     except Exception as e:
-                        rest_score = 0 # FIXME: think about how to deal with such cases
+                        rest_score = 0  # FIXME: think about how to deal with such cases
 
-                task_score = min(round((rest_score + typo_score) / N_CRITERIONS), MAX_SCORE_PER_TASK)
+                task_score = min(
+                    round((rest_score + typo_score) / N_CRITERIONS), MAX_SCORE_PER_TASK
+                )
                 st.session_state.score.append(task_score)
 
-                chat_response = (
-                    f"{res_rest}\n\nБалл за ответ: {task_score}% из {MAX_SCORE_PER_TASK}%\n\n"
-                )
-                
+                chat_response = f"{res_rest}\n\nБалл за ответ: {task_score}% из {MAX_SCORE_PER_TASK}%\n\n"
+
                 if typo_score == MAX_SCORE_PER_TASK:
                     message_typo = "1. Грамматика: Ошибок нет. Оценка: 100%"
                 else:
@@ -258,7 +269,9 @@ try:
                 st.write(f"{CHAT_PREFIX}\n{message_typo}\n{chat_response}")
                 col1, col2 = st.columns([1, 3])
                 with col1:
-                    st.button("↻ Повтор", on_click=reset_last_msg, use_container_width=True)
+                    st.button(
+                        "↻ Повтор", on_click=reset_last_msg, use_container_width=True
+                    )
                 with col2.expander(label=target_expander[0]):
                     st.write(target_expander[1])
 
@@ -274,7 +287,9 @@ try:
                     }
                 )
 
-            st.session_state.answer_index += 1 if not st.session_state.answer_index else 3
+            st.session_state.answer_index += (
+                1 if not st.session_state.answer_index else 3
+            )
             st.session_state.dialog_index += 1
 
             if st.session_state.dialog_index < st.session_state.n_dialogs:
@@ -294,14 +309,14 @@ try:
             else:
                 st.session_state.is_last_msg = True
                 st.session_state.show_input = False
-                st.rerun() # To hide input bar
-        
+                st.rerun()  # To hide input bar
+
         # st.markdown('''<script>a = document.getElementsByClassName("st-emotion-cache-0"); console.log(a);</script>''', unsafe_allow_html=True)
         custom_input(disabled=False, key="input_msg")
         temp = st.empty()
         with temp:
             st.components.v1.html(js_scroll)
-            time.sleep(.5)
+            time.sleep(0.5)
         temp.empty()
 
     if st.session_state.dialog_index >= st.session_state.n_dialogs:
