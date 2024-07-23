@@ -292,7 +292,7 @@ try:
                         rest_score = 0  # FIXME: think about how to deal with such cases
 
                 task_score = min(
-                    round((rest_score + typo_score) / N_CRITERIONS), MAX_SCORE_PER_TASK
+                    round((rest_score + emoji_score + typo_score) / N_CRITERIONS), MAX_SCORE_PER_TASK
                 )
                 st.session_state.score.append(task_score)
 
