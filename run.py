@@ -35,14 +35,28 @@ try:
     st.markdown(
         """
     <style>
+    iframe {
+        position: fixed;
+        bottom: 0;
+        z-index: 100;
+    }
+    @media (max-width: 540px){
+        .main {
+            padding: 0 25px; 
+            justify-content: flex-end;
+        }
+        .block-container{
+            padding: 0;
+        }
+        iframe {
+            position: inherit;
+            bottom: inherit;
+        }
+    }
     .st-emotion-cache-8ijwm3 {
         height: 48px;
     }
-    iframe {
-        position: fixed;
-        bottom: 0px;
-        z-index: 100;
-    }
+   
     .stApp [data-testid="stToolbar"]{
         display:none;
     }
@@ -117,6 +131,7 @@ try:
         # Send 'ready' signal to LMS
         html(
             """
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
                 <script type="text/javascript">
                 window.parent.parent.postMessage({status: 'ready'}, '*');
                 var chat_container = parent.document.querySelector('.st-emotion-cache-0');
@@ -376,28 +391,37 @@ try:
             st.components.v1.html(js_scroll)
             time.sleep(0.5)
         temp.empty()
-
+    
     if st.session_state.dialog_index >= st.session_state.n_dialogs:
-        percent_result = round(
-            sum(st.session_state.score)
-            / (len(st.session_state.score) * MAX_SCORE_PER_TASK)
-            * 100,
-            2,
-        )
+        with st.chat_message("assistant", avatar="🤖"):
+            percent_result = round(
+                sum(st.session_state.score)
+                / (len(st.session_state.score) * MAX_SCORE_PER_TASK)
+                * 100,
+                2,
+            )
 
-        st.write("Задание завершено, спасибо!")
-        st.markdown(
-            f'<h1 align="center">Ваш балл: {sum(st.session_state.score)}/{len(st.session_state.score) * MAX_SCORE_PER_TASK}\n\n({percent_result}%)</h1>',
-            unsafe_allow_html=True,
-        )
-        html(
-            f"""
-            <script>
-                window.parent.parent.postMessage({{result: {[sum(st.session_state.score), len(st.session_state.score) * MAX_SCORE_PER_TASK]}}}, "*");
-            </script>
-                """,
-            height=0,
-        )
+            st.write("Задание завершено, спасибо!")
+            st.markdown(
+                f'<h1 align="center">Ваш балл: {sum(st.session_state.score)}/{len(st.session_state.score) * MAX_SCORE_PER_TASK}\n\n({percent_result}%)</h1>',
+                unsafe_allow_html=True,
+            )
+            
+            
+            html(
+                f"""
+                <script>
+                    window.parent.parent.postMessage({{result: {[sum(st.session_state.score), len(st.session_state.score) * MAX_SCORE_PER_TASK]}}}, "*");
+                </script>
+                    """,
+                height=0,
+            )
+        temp = st.empty()
+        with temp:
+                st.components.v1.html(js_scroll)
+                time.sleep(0.5)
+        temp.empty()
+
 
 
 except Exception as e:
