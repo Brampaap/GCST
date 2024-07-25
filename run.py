@@ -40,19 +40,7 @@ try:
         bottom: 0;
         z-index: 100;
     }
-    @media (max-width: 540px){
-        .main {
-            padding: 0 25px; 
-            justify-content: flex-end;
-        }
-        .block-container{
-            padding: 0;
-        }
-        iframe {
-            position: static;
-            bottom: inherit;
-        }
-    }
+
     .st-emotion-cache-8ijwm3 {
         height: 48px;
     }
@@ -60,6 +48,7 @@ try:
     .stApp [data-testid="stToolbar"]{
         display:none;
     }
+    
     .st-emotion-cache-qcqlej{
         display:none;
     }
