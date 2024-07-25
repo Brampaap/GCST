@@ -49,7 +49,7 @@ try:
             padding: 0;
         }
         iframe {
-            position: inherit;
+            position: static;
             bottom: inherit;
         }
     }
