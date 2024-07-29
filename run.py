@@ -35,6 +35,9 @@ try:
     st.markdown(
         """
     <style>
+    span {
+        word-break: break-all; 
+    }
     iframe {
         position: fixed;
         bottom: 0;
@@ -52,7 +55,9 @@ try:
     .st-emotion-cache-qcqlej{
         display:none;
     }
-
+    .block-container {
+        padding: 2rem 1rem 10rem 1rem;
+    }
     </style>
     """,
         unsafe_allow_html=True,
@@ -137,7 +142,10 @@ try:
         st.session_state.dialog = eval(st.query_params["data"])
         dialog = st.session_state.dialog
 
-    # Chat init
+    st.session_state.comment = st.query_params.get("comment")
+    comment = st.session_state.comment
+
+    # Chat init 
     if "messages" not in st.session_state:
         assert len(dialog), "No tasks provided!"
 
@@ -159,6 +167,8 @@ try:
         st.session_state.input_msg = None
         st.session_state.score = []
 
+    if comment:
+        st.markdown(comment)
     st.title("Тренажёр чата")
     # Chat cache
     for idx, msg_block in enumerate(st.session_state.messages, start=1):
