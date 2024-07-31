@@ -7,6 +7,7 @@ from langchain.schema import HumanMessage, SystemMessage
 from langchain.chat_models.gigachat import GigaChat
 from Levenshtein import distance
 import emoji
+import re
 
 js_scroll = """
 <script>
@@ -228,17 +229,19 @@ try:
             with st.chat_message("assistant", avatar="🤖"):
                 with st.spinner(text="Анализирую ваш ответ..."):
                     # Typo checking
+                    typo_input_msg = "".join(x for x in input_msg if not emoji.is_emoji(x))
+                    print(typo_input_msg)
                     typo_prompt = [
                         HumanMessage(
-                            content=f"Перепиши текст, исправив грамматические, орфографические и пунктуационные ошибки в тексте.\nТекст: {input_msg}\nИсправленный текст:"
+                            content=f"Перепиши текст, исправив грамматические, орфографические и пунктуационные ошибки в тексте.\nТекст: {typo_input_msg}\nИсправленный текст:"
                         )
                     ]
                     # Request LITE model
                     res_typo = st.session_state.chat_lite(typo_prompt).content
-                    typo_score = max(MAX_TYPOS - distance(input_msg, res_typo), 0)
+                    typo_score = max(MAX_TYPOS - distance(typo_input_msg, res_typo), 0)
                     typo_score *= MAX_SCORE_PER_TASK // MAX_TYPOS
 
-                    lstr_typo, rstr_typo = get_string_diff(input_msg, res_typo)
+                    lstr_typo, rstr_typo = get_string_diff(typo_input_msg, res_typo)
 
                     # Emoji checking
                     emoji_prompt = SystemMessage(
