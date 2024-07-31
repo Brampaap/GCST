@@ -229,7 +229,7 @@ try:
             with st.chat_message("assistant", avatar="🤖"):
                 with st.spinner(text="Анализирую ваш ответ..."):
                     # Typo checking
-                    typo_input_msg = "".join(x for x in input_msg if not emoji.is_emoji(x))
+                    typo_input_msg = "".join(x for x in input_msg if not emoji.is_emoji(x)).strip()
                     print(typo_input_msg)
                     typo_prompt = [
                         HumanMessage(
