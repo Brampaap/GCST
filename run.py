@@ -9,6 +9,9 @@ from Levenshtein import distance
 import emoji
 import re
 
+emoji_list = ["😊", "😊", "🙂", "😌", "😉", "😐", "😞", "🙁", "😔", "❄️", "⭐️", "🤗", "🌷", "🌺", "🌹", "☘️", "💐", "⏳️", "⌛️", "🚀", "☀️", "🌟", 
+      "🌞", "🔥", "⚡️", "✨️", "🎈", "🎉", "🎊", "🎁", "📍", "📌", "✅️", "☑️", "✔️", "💙", "🩵", "🤍", "👋", "🫶", "🙌", "💪", "🙏"]
+
 js_scroll = """
 <script>
     itemsScrollTo = parent.window.document.getElementsByClassName("st-emotion-cache-0"); itemsScrollTo[itemsScrollTo.length-1].scrollIntoView();
@@ -232,11 +235,11 @@ try:
                 )
 
             with st.chat_message("assistant", avatar="🤖"):
+                
                 with st.spinner(text="Анализирую ваш ответ..."):
                     vals_in_res = 0
-
                 # --- Typo checking
-                    typo_input_msg = "".join(x for x in input_msg if not emoji.is_emoji(x)).strip()
+                    typo_input_msg = "".join(x for x in input_msg if x not in emoji_list and not emoji.is_emoji(x)).strip()
                     typo_prompt = [
                         HumanMessage(
                             content=f"Перепиши текст, исправив грамматические, орфографические и пунктуационные ошибки в тексте.\nТекст: {typo_input_msg}\nИсправленный текст: "
