@@ -2,6 +2,10 @@ import streamlit as st
 import time
 from streamlit.components.v1 import html
 import streamlit.components.v1 as components
+from modules.typos import processor as typo
+from modules.common.prompt import global_prompt
+from modules.typos.promts import typo_system_prompt_template
+import constants
 
 from langchain.schema import HumanMessage, SystemMessage
 from langchain.chat_models.gigachat import GigaChat
@@ -38,50 +42,38 @@ try:
 
     st.markdown(
         """
-    <style>
-    span {
-        word-break: break-all; 
-    }
-    iframe {
-        position: fixed;
-        bottom: 0;
-        z-index: 100;
-    }
+            <style>
+            span {
+                word-break: break-all; 
+            }
 
-    .st-emotion-cache-8ijwm3 {
-        height: 48px;
-    }
-   
-    .stApp [data-testid="stToolbar"]{
-        display:none;
-    }
-    
-    .st-emotion-cache-qcqlej{
-        display:none;
-    }
-    .block-container {
-        padding: 2rem 1rem 10rem 1rem;
-    }
-    </style>
-    """,
+            iframe {
+                position: fixed;
+                bottom: 0;
+                z-index: 100;
+            }
+
+            .st-emotion-cache-8ijwm3 {
+                height: 48px;
+            }
+        
+            .stApp [data-testid="stToolbar"]{
+                display:none;
+            }
+            
+            .st-emotion-cache-qcqlej{
+                display:none;
+            }
+            
+            .block-container {
+                padding: 2rem 1rem 10rem 1rem;
+            }
+            </style>
+        """,
         unsafe_allow_html=True,
     )
 
-    system_prompt = SystemMessage(
-        content='\
-    Ты - тренеражер центра поддержки. Твоя цель: сформировать у сотрудника профессиональный навык написания ответов.\n\
-    Оцени последний ответ сотрудника по всем пунктам:\n\
-    1. Смысловая схожесть: Сравни ответ сотрудника с верным ответом на предмет семантической схожести.\n\
-    Верный ответ: "Здравствуйте! Елена Геннадьевна, сейчас проверю и сразу к вам! 🙂 "\n\
-    Правильный ответ сотрудника: «Здравствуйте, мне нужно проверить информацию, скоро вернусь».\n\
-    Обоснование: смысл верного ответа и ответа сотрудника схожи, они оба говорят о необходимости проверить информацию и просят подождать.\n\
-    Неправильный ответ сотрудника:\n\
-    «Вы всё правильно поняли» - в этом ответе нет ничего общего с верным ответом, потому что сотрудник не говорит о необходимости проверить информацию.\n\
-    2. Клиентоориентированность: Оцени уровень сервиса и вежливости в ответе сотрудника, насколько уважительным было обращение к клиенту.\n\
-    3. Понятность текста: Оцени логическую структуру и ясность ответа сотрудника. Насколько легко текст может быть понят клиентом.\n\
-    \n\
-    По каждому из трех пунктов напиши короткий <Комментарий> и поставь <Оценка> = {0, 25, 50, 75, 100}: "<Имя пункта>: <Комментарий>. Оценка: <Оценка>%."'
-    )
+    system_prompt = SystemMessage(content=global_prompt)
 
 
     dialog = [
@@ -108,16 +100,6 @@ try:
         ("Нет, я уже все узнал. До свидания.", "Всего доброго!"),
     ][:3]
 
-    CLIENT_MSG_IND = 0
-    TARGET_MSG_IND = 1
-    MAX_TYPOS = 4
-    MAX_SCORE_PER_TASK = 100
-
-    USER_PREFIX = "[Сотрудник]"
-    TARGET_PREFIX = "[Верный ответ]"
-    CLIENT_PREFIX = "[Клиент]"
-    CHAT_PREFIX = "[Оценка ответа]"
-
     if "initialized" not in st.session_state:
         st.session_state.chat = GigaChat(
             credentials=st.secrets["GIGAAUTH"],
@@ -125,11 +107,12 @@ try:
             scope="GIGACHAT_API_CORP",
             model="GigaChat-Pro",
         )
-        st.session_state.chat_lite = GigaChat(
+        lite_model = GigaChat(
             credentials=st.secrets["GIGAAUTH"],
             scope="GIGACHAT_API_CORP",
             verify_ssl_certs=False,
         )
+        st.session_state.typo_processor = typo.TypoProcessor(model=lite_model)
 
         # Send 'ready' signal to LMS
         html(
@@ -167,7 +150,7 @@ try:
                 "role": "assistant",
                 "avatar": "👨‍💼",
                 "content_type": ["text"],
-                "content": [st.session_state.next_dialog[CLIENT_MSG_IND]],
+                "content": [st.session_state.next_dialog[constants.CLIENT_MSG_IND]],
             }
         ]
         st.session_state.show_input = True
@@ -207,17 +190,6 @@ try:
                         with st.expander(label=msg_block["content"][i][0]):
                             st.write(msg_block["content"][i][1])
 
-    def get_string_diff(lstr, rstr):
-        rwords = set(rstr.split(" "))
-        lwords = set(lstr.split(" "))
-
-        rstr = " ".join(
-            [f":green[{x}]" if x not in lwords else x for x in rstr.split(" ")]
-        )
-        lstr = " ".join(
-            [f":red[{x}]" if x not in rwords else x for x in lstr.split(" ")]
-        )
-        return lstr, rstr
 
     # Main application loop
     if st.session_state.show_input:
@@ -239,18 +211,7 @@ try:
                 with st.spinner(text="Анализирую ваш ответ..."):
                     vals_in_res = 0
                 # --- Typo checking
-                    typo_input_msg = "".join(x for x in input_msg if x not in emoji_list and not emoji.is_emoji(x)).strip()
-                    typo_prompt = [
-                        HumanMessage(
-                            content=f"Перепиши текст, исправив грамматические, орфографические и пунктуационные ошибки в тексте.\nТекст: {typo_input_msg}\nИсправленный текст: "
-                        )
-                    ]
-                    # Request LITE model
-                    res_typo = st.session_state.chat_lite(typo_prompt).content.strip()
-                    typo_score = max(MAX_TYPOS - distance(typo_input_msg, res_typo), 0)
-                    typo_score *= MAX_SCORE_PER_TASK // MAX_TYPOS
-
-                    lstr_typo, rstr_typo = get_string_diff(typo_input_msg, res_typo)
+                    typo_score, message_typo = st.session_state.typo_processor.run(input_msg)
                     vals_in_res += 1
 
                 # --- Emoji checking
@@ -263,11 +224,11 @@ try:
                     
                     res_emoji = None
                     emoji_in_msg = bool(emoji.distinct_emoji_list(input_msg))
-                    emoji_in_target = bool(emoji.distinct_emoji_list(st.session_state.next_dialog[TARGET_MSG_IND]))
+                    emoji_in_target = bool(emoji.distinct_emoji_list(st.session_state.next_dialog[constants.TARGET_MSG_IND]))
                         
                     if emoji_in_msg and emoji_in_target:
-                        prompt_content = f"{TARGET_PREFIX} {st.session_state.next_dialog[TARGET_MSG_IND]}\n\
-                                           {USER_PREFIX} {input_msg}"
+                        prompt_content = f"{constants.TARGET_PREFIX} {st.session_state.next_dialog[constants.TARGET_MSG_IND]}\n\
+                                           {constants.USER_PREFIX} {input_msg}"
 
                         prompt = [emoji_prompt, HumanMessage(content=prompt_content)]
 
@@ -299,9 +260,9 @@ try:
                     vals_in_res += 1
 
                 # --- Main analysis
-                    prompt_content = f"{CLIENT_PREFIX} {st.session_state.next_dialog[CLIENT_MSG_IND]}\n\
-                                {TARGET_PREFIX} {st.session_state.next_dialog[TARGET_MSG_IND]}\n\
-                                {USER_PREFIX} {input_msg}\
+                    prompt_content = f"{constants.CLIENT_PREFIX} {st.session_state.next_dialog[constants.CLIENT_MSG_IND]}\n\
+                                {constants.TARGET_PREFIX} {st.session_state.next_dialog[constants.TARGET_MSG_IND]}\n\
+                                {constants.USER_PREFIX} {input_msg}\
                                 "
 
                     prompt = [system_prompt, HumanMessage(content=prompt_content)]
@@ -322,18 +283,13 @@ try:
                             continue
 
                 task_score = min(
-                    round((rest_score + emoji_score + typo_score) / vals_in_res), MAX_SCORE_PER_TASK
+                    round((rest_score + emoji_score + typo_score) / vals_in_res), constants.MAX_SCORE_PER_TASK
                 )
                 st.session_state.score.append(task_score)
 
-                chat_response = f"{res_rest}\n\nБалл за ответ: {task_score}% из {MAX_SCORE_PER_TASK}%\n\n"
+                chat_response = f"{res_rest}\n\nБалл за ответ: {task_score}% из {constants.MAX_SCORE_PER_TASK}%\n\n"
 
-                if typo_score == MAX_SCORE_PER_TASK:
-                    message_typo = "1. Грамматика: Ошибок нет. Оценка: 100%"
-                else:
-                    message_typo = f'1. Грамматика: Найдены опечатки: "{lstr_typo}"; \nИсправленное сообщение: "{rstr_typo}". \nОценка: {typo_score}%'
-
-                if emoji_score == MAX_SCORE_PER_TASK:
+                if emoji_score == constants.MAX_SCORE_PER_TASK:
                     message_emoji = (
                         res_emoji
                         or "1. Использование эмоджи: Эмоджи не использовались. Оценка: 100%"
@@ -349,11 +305,11 @@ try:
 
                 target_expander = [
                     "Верный ответ",
-                    dialog[st.session_state.dialog_index][TARGET_MSG_IND],
+                    dialog[st.session_state.dialog_index][constants.TARGET_MSG_IND],
                 ]
 
                 st.write(
-                    f"{CHAT_PREFIX}\n{message_typo}\n{message_emoji}\n{chat_response}"
+                    f"{constants.CHAT_PREFIX}\n{message_typo}\n{message_emoji}\n{chat_response}"
                 )
                 col1, col2 = st.columns([1, 3])
                 with col1:
@@ -369,7 +325,7 @@ try:
                         "avatar": "🤖",
                         "content_type": ["text", "expand"],
                         "content": [
-                            f"{CHAT_PREFIX}\n{message_typo}\n{message_emoji}\n{chat_response}",
+                            f"{constants.CHAT_PREFIX}\n{message_typo}\n{message_emoji}\n{chat_response}",
                             target_expander,
                         ],
                     }
@@ -384,14 +340,14 @@ try:
                 st.session_state.next_dialog = dialog[st.session_state.dialog_index]
 
                 with st.chat_message("assistant", avatar="👨‍💼"):
-                    st.write(st.session_state.next_dialog[CLIENT_MSG_IND])
+                    st.write(st.session_state.next_dialog[constants.CLIENT_MSG_IND])
 
                 st.session_state.messages.append(
                     {
                         "role": "assistant",
                         "avatar": "👨‍💼",
                         "content_type": ["text"],
-                        "content": [st.session_state.next_dialog[CLIENT_MSG_IND]],
+                        "content": [st.session_state.next_dialog[constants.CLIENT_MSG_IND]],
                     }
                 )
             else:
@@ -411,14 +367,14 @@ try:
         with st.chat_message("assistant", avatar="🤖"):
             percent_result = round(
                 sum(st.session_state.score)
-                / (len(st.session_state.score) * MAX_SCORE_PER_TASK)
+                / (len(st.session_state.score) * constants.MAX_SCORE_PER_TASK)
                 * 100,
                 2,
             )
 
             st.write("Задание завершено, спасибо!")
             st.markdown(
-                f'<h1 align="center">Ваш балл: {sum(st.session_state.score)}/{len(st.session_state.score) * MAX_SCORE_PER_TASK}\n\n({percent_result}%)</h1>',
+                f'<h1 align="center">Ваш балл: {sum(st.session_state.score)}/{len(st.session_state.score) * constants.MAX_SCORE_PER_TASK}\n\n({percent_result}%)</h1>',
                 unsafe_allow_html=True,
             )
             
@@ -426,7 +382,7 @@ try:
             html(
                 f"""
                 <script>
-                    window.parent.parent.postMessage({{result: {[sum(st.session_state.score), len(st.session_state.score) * MAX_SCORE_PER_TASK]}}}, "*");
+                    window.parent.parent.postMessage({{result: {[sum(st.session_state.score), len(st.session_state.score) * constants.MAX_SCORE_PER_TASK]}}}, "*");
                 </script>
                     """,
                 height=0,

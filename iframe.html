@@ -42,12 +42,14 @@
             let jsonString = JSON.stringify(array);
             let encodedJson = encodeURIComponent(jsonString);
 
+            let comment = "Somebody once told me the world is gonna roll me. Somebody once told me the world is gonna roll me. Somebody once told me the world is gonna roll me. Somebody once told me the world is gonna roll me. Somebody once told me the world is gonna roll me. Somebody once told me the world is gonna roll me. Somebody once told me the world is gonna roll me."
 
-            var url = "http://localhost:8501?data=" + encodedJson;
+
+            var url = "http://localhost:8501?data=" + encodedJson + "&comment=" + comment;
 
             var iframe = document.createElement('iframe');
             iframe.src = url;
-            iframe.width = "600";
+            iframe.width = "500";
             iframe.height = "1000";
             iframe.frameBorder = "0";
 
