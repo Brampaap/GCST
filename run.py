@@ -374,7 +374,7 @@ try:
 
             st.write("Задание завершено, спасибо!")
             st.markdown(
-                f'<h1 align="center">Ваш балл: {sum(st.session_state.score)}/{len(st.session_state.score) * constants.MAX_SCORE_PER_TASK}\n\n({percent_result}%)</h1>',
+                f'<h1 align="center">Ваш балл: {percent_result}%</h1>',
                 unsafe_allow_html=True,
             )
             
