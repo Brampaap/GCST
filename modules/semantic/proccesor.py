@@ -23,11 +23,11 @@ class SemanticSimProcessor:
     def get_cos_sim(self, user_message: str, target_message: str) -> float:
         user_mes_emg = np.array(self.emb_model.embed_query(user_message))
         trg_mes_emb = np.array(self.emb_model.embed_query(target_message))
-
+        
         cos_sim = (user_mes_emg @ trg_mes_emb) / (
             np.linalg.norm(user_mes_emg) * np.linalg.norm(trg_mes_emb)
         )
-
+        
         score = np.digitize(cos_sim, constants.EMB_SCORE_BINS, right=False) * (
             constants.MAX_SCORE_PER_TASK / len(constants.EMB_SCORE_BINS)
         )
