@@ -39,8 +39,8 @@ class SemanticSimProcessor:
         return score
     
     def find_citation(self, user_message: str, target_message: str):
-        user_message_set = set(self.config.regex.sub(EMPTY_STR, user_message).lower().split(SEP))
-        target_message_set = set(self.config.regex.sub(EMPTY_STR, target_message).lower().split(SEP))
+        user_message_set = set(self.config.regex.sub(EMPTY_STR, user_message.strip()).lower().split(SEP))
+        target_message_set = set(self.config.regex.sub(EMPTY_STR, target_message.strip()).lower().split(SEP))
 
         if user_message_set.issubset(target_message_set):
             score = np.digitize(
