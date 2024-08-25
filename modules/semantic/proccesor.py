@@ -35,16 +35,14 @@ class SemanticSimProcessor:
         return score
 
     def run(self, user_message: str, target_message: str, client_message: str):
-
         emb_score = self.get_cos_sim(user_message, target_message)
-
         sys_prompt = SystemMessage(content=semantic_prompt)
 
         prompt_content = HumanMessage(
             content=f"""
             {constants.TARGET_PREFIX} {target_message}
             {constants.USER_PREFIX} {user_message}
-            "Оценка эмбеддинговой модели:" {emb_score}
+            "[Оценка эмбеддинговой модели]" {emb_score}
         """
         )
 

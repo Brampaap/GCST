@@ -148,11 +148,13 @@ try:
             verify_ssl_certs=False,
             scope="GIGACHAT_API_CORP",
             model="GigaChat-Pro",
+            temperature=0.01
         )
         lite_model = GigaChat(
             credentials=st.secrets["GIGAAUTH"],
             scope="GIGACHAT_API_CORP",
             verify_ssl_certs=False,
+            temperature=0.01
         )
         st.session_state.semantic_sim_processor = semantic_sim.SemanticSimProcessor(
             model=st.session_state.chat, emb_secret=st.secrets["EMBAUTH"]
