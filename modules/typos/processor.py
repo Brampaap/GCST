@@ -12,22 +12,37 @@ from dataclasses import dataclass, field
 class TypoConfig:
     max_diff: int = field(default=5)
 
-class TypoProcessor():
-    def __init__(self, model):
+
+class TypoProcessor:
+    replacemets = {
+        "ё": "е",
+        " .": ".",
+        " !": "!",
+        " ?": "?",
+    }
+
+    def __init__(self, model: GigaChat):
         self.model = model
         self.config = TypoConfig()
-    
-    @staticmethod
-    def clean_message(user_message):
+
+    @classmethod
+    def clean_message(cls, user_message):
+
         user_message = re.sub(r"[\U0001fa75]", "", user_message)
-        user_message = user_message[:-1] if user_message[-1] in ["!", "."] else user_message
-        user_message = user_message.replace("ё", "е")
         user_message = emoji.replace_emoji(user_message, replace="").strip()
         user_message = re.sub(r"\s+", " ", user_message)
+
+        for x, y in cls.replacemets.items():
+            user_message = user_message.replace(x, y)
+
+        user_message = (
+            user_message[:-1] if user_message[-1] in ["!", "."] else user_message
+        )
+
         return user_message
-    
+
     def highlight_diff(self, lstr, rstr):
-        #TODO: Add word position accounting
+        # TODO: Add word position accounting
         rwords = set(rstr.split(SEP))
         lwords = set(lstr.split(SEP))
 
@@ -38,12 +53,12 @@ class TypoProcessor():
             [f":red[{x}]" if x not in rwords else x for x in lstr.split(SEP)]
         )
         return lstr, rstr
-    
-    def compute_score(self, lstr, rstr) -> float:
+
+    def compute_score(self, lstr, rstr) -> int:
         score = max(self.config.max_diff - levenshtein_dist(lstr, rstr), 0)
         score *= MAX_SCORE_PER_TASK / self.config.max_diff
-        return score
-    
+        return int(score)
+
     def prepare_response(self, lstr, rstr, score):
         lstr, rstr = self.highlight_diff(lstr, rstr)
 
@@ -59,26 +74,17 @@ class TypoProcessor():
 
         prompt = [
             SystemMessage(
-                content=typo_system_prompt_template.substitute(typo_input_msg=user_message)
+                content=typo_system_prompt_template.substitute(
+                    typo_input_msg=user_message
+                )
             )
         ]
 
         response = self.model(prompt).content
         response = self.clean_message(response)
-        
+
         score = self.compute_score(user_message, response)
 
         response_message = self.prepare_response(user_message, response, score)
 
         return score, response_message
-        
-
-if __name__ == "__main__":
-    model = GigaChat(
-            credentials="YzMzZGE0ZDItZTNmYi00NjExLTk2ZGUtNWVjYmU0NjA3NWViOjFmMGMwOWU0LTE3YWUtNGE4OC1hZjA1LWY3Yjc4MzA4Y2Q4OQ==",
-            scope="GIGACHAT_API_CORP",
-            verify_ssl_certs=False,
-        )
-    typo_scorer = TypoProcessor(model)
-    res = typo_scorer.run("😊😊🙂😌😉😐😞🙁😔❄️⭐️🤗🌷🌺🌹☘️💐⏳️⌛️🚀☀️🌟🌞🔥⚡️✨️🎈🎉🎊🎁📍📌✅️☑️✔️💙🩵🤍👋🫶🙌💪🙏Добрый день! Я новый сотрудник, давайте 😊😊🙂😌😉😐😞🙁😔❄️⭐️🤗🌷🌺🌹☘️💐⏳️⌛️🚀☀️🌟🌞🔥⚡️✨️🎈🎉🎊🎁📍📌✅️☑️✔️💙🩵🤍👋🫶🙌💪🙏 пройдёмся по вашей проблеме ❄️😊😊🙂😌😉😐😞🙁😔❄️⭐️🤗🌷🌺🌹☘️💐⏳️⌛️🚀☀️🌟🌞🔥⚡️✨️🎈🎉🎊🎁📍📌✅️☑️✔️💙🩵🤍👋🫶🙌💪🙏")
-    print(res)

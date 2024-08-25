@@ -9,3 +9,6 @@ USER_PREFIX = "[Сотрудник]"
 TARGET_PREFIX = "[Верный ответ]"
 CLIENT_PREFIX = "[Клиент]"
 CHAT_PREFIX = "[Оценка ответа]"
+SCORE_PATTERN = "Оценка: "
+
+EMB_SCORE_BINS = [0.89, 0.91, 0.93, 0.95]

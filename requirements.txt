@@ -10,3 +10,4 @@ gigachain-core==0.1.43.1
 gigachain-text-splitters==0.0.1
 gigachat==0.1.23
 Levenshtein==0.23.0
+numpy==1.26.4

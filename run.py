@@ -3,18 +3,61 @@ import time
 from streamlit.components.v1 import html
 import streamlit.components.v1 as components
 from modules.typos import processor as typo
+from modules.semantic import proccesor as semantic_sim
 from modules.common.prompt import global_prompt
-from modules.typos.promts import typo_system_prompt_template
+from modules.common.parsers import score as score_parser
 import constants
 
 from langchain.schema import HumanMessage, SystemMessage
 from langchain.chat_models.gigachat import GigaChat
-from Levenshtein import distance
-import emoji
-import re
 
-emoji_list = ["😊", "😊", "🙂", "😌", "😉", "😐", "😞", "🙁", "😔", "❄️", "⭐️", "🤗", "🌷", "🌺", "🌹", "☘️", "💐", "⏳️", "⌛️", "🚀", "☀️", "🌟", 
-      "🌞", "🔥", "⚡️", "✨️", "🎈", "🎉", "🎊", "🎁", "📍", "📌", "✅️", "☑️", "✔️", "💙", "🩵", "🤍", "👋", "🫶", "🙌", "💪", "🙏"]
+import emoji
+
+emoji_list = [
+    "😊",
+    "😊",
+    "🙂",
+    "😌",
+    "😉",
+    "😐",
+    "😞",
+    "🙁",
+    "😔",
+    "❄️",
+    "⭐️",
+    "🤗",
+    "🌷",
+    "🌺",
+    "🌹",
+    "☘️",
+    "💐",
+    "⏳️",
+    "⌛️",
+    "🚀",
+    "☀️",
+    "🌟",
+    "🌞",
+    "🔥",
+    "⚡️",
+    "✨️",
+    "🎈",
+    "🎉",
+    "🎊",
+    "🎁",
+    "📍",
+    "📌",
+    "✅️",
+    "☑️",
+    "✔️",
+    "💙",
+    "🩵",
+    "🤍",
+    "👋",
+    "🫶",
+    "🙌",
+    "💪",
+    "🙏",
+]
 
 js_scroll = """
 <script>
@@ -75,7 +118,6 @@ try:
 
     system_prompt = SystemMessage(content=global_prompt)
 
-
     dialog = [
         (
             "Меня уже трясет от вашего контакт-центра. Объясните, на основании какого закона ваши сотрудники сами прерывают связь?",
@@ -112,6 +154,9 @@ try:
             scope="GIGACHAT_API_CORP",
             verify_ssl_certs=False,
         )
+        st.session_state.semantic_sim_processor = semantic_sim.SemanticSimProcessor(
+            model=st.session_state.chat, emb_secret=st.secrets["EMBAUTH"]
+        )
         st.session_state.typo_processor = typo.TypoProcessor(model=lite_model)
 
         # Send 'ready' signal to LMS
@@ -137,7 +182,7 @@ try:
     st.session_state.comment = st.query_params.get("comment")
     comment = st.session_state.comment
 
-    # Chat init 
+    # Chat init
     if "messages" not in st.session_state:
         assert len(dialog), "No tasks provided!"
 
@@ -190,7 +235,6 @@ try:
                         with st.expander(label=msg_block["content"][i][0]):
                             st.write(msg_block["content"][i][1])
 
-
     # Main application loop
     if st.session_state.show_input:
         input_msg = st.session_state.input_msg
@@ -207,25 +251,45 @@ try:
                 )
 
             with st.chat_message("assistant", avatar="🤖"):
-                
+
                 with st.spinner(text="Анализирую ваш ответ..."):
                     vals_in_res = 0
-                # --- Typo checking
-                    typo_score, message_typo = st.session_state.typo_processor.run(input_msg)
+                    # --- Typo checking
+                    typo_score, message_typo = st.session_state.typo_processor.run(
+                        input_msg
+                    )
                     vals_in_res += 1
 
-                # --- Emoji checking
+                    # --- Semantic similarity checking
+                    semantic_score, message_semantic = (
+                        st.session_state.semantic_sim_processor.run(
+                            user_message=input_msg,
+                            target_message=st.session_state.next_dialog[
+                                constants.TARGET_MSG_IND
+                            ],
+                            client_message=st.session_state.next_dialog[
+                                constants.CLIENT_MSG_IND
+                            ],
+                        )
+                    )
+                    vals_in_res += 1
+
+                    # --- Emoji checking
                     emoji_prompt = SystemMessage(
                         content="""Ты - тренеражер центра поддержки. Твоя цель: сформировать у сотрудника профессиональный навык написания ответов.\n\
                                     Оцени схожесть и уместность использования эмоджи в ответе [Сотрудник] сравнительно с [Верный ответ]. \n\
                                     Формат вывода: 1. Использование эмоджи: <комментарий>. Оценка: {0, 25, 50, 75, 100}%.
                                     """
                     )
-                    
+
                     res_emoji = None
                     emoji_in_msg = bool(emoji.distinct_emoji_list(input_msg))
-                    emoji_in_target = bool(emoji.distinct_emoji_list(st.session_state.next_dialog[constants.TARGET_MSG_IND]))
-                        
+                    emoji_in_target = bool(
+                        emoji.distinct_emoji_list(
+                            st.session_state.next_dialog[constants.TARGET_MSG_IND]
+                        )
+                    )
+
                     if emoji_in_msg and emoji_in_target:
                         prompt_content = f"{constants.TARGET_PREFIX} {st.session_state.next_dialog[constants.TARGET_MSG_IND]}\n\
                                            {constants.USER_PREFIX} {input_msg}"
@@ -259,7 +323,7 @@ try:
 
                     vals_in_res += 1
 
-                # --- Main analysis
+                    # --- Main analysis
                     prompt_content = f"{constants.CLIENT_PREFIX} {st.session_state.next_dialog[constants.CLIENT_MSG_IND]}\n\
                                 {constants.TARGET_PREFIX} {st.session_state.next_dialog[constants.TARGET_MSG_IND]}\n\
                                 {constants.USER_PREFIX} {input_msg}\
@@ -272,22 +336,10 @@ try:
 
                     rest_score = 0
                     for x in res_rest.split("\n"):
-                        try:  # Sometimes the response format may be incorrect
-                            rest_score += int(
-                                "".join(
-                                    list(filter(str.isdigit, x.split("Оценка: ")[-1]))
-                                )
-                            )
-                            vals_in_res += 1
-                        except Exception as e:
-                            continue
-
-                task_score = min(
-                    round((rest_score + emoji_score + typo_score) / vals_in_res), constants.MAX_SCORE_PER_TASK
-                )
-                st.session_state.score.append(task_score)
-
-                chat_response = f"{res_rest}\n\nБалл за ответ: {task_score}% из {constants.MAX_SCORE_PER_TASK}%\n\n"
+                        rest_score += score_parser.split_parse_score(
+                            x, constants.SCORE_PATTERN
+                        )
+                        vals_in_res += 1
 
                 if emoji_score == constants.MAX_SCORE_PER_TASK:
                     message_emoji = (
@@ -298,8 +350,10 @@ try:
                     message_emoji = res_emoji
                 elif emoji_score == -1:
                     message_emoji = "1. Использование эмоджи: В данной ситуации предусмотрено использование эмоджи. Оценка: 0%"
+                    emoji_score = 0
                 elif emoji_score == -2:
                     message_emoji = "1. Использование эмоджи: В данной ситуации не предусмотрено использование эмоджи. Оценка: 0%"
+                    emoji_score = 0
                 else:
                     message_emoji = res_emoji
 
@@ -308,9 +362,27 @@ try:
                     dialog[st.session_state.dialog_index][constants.TARGET_MSG_IND],
                 ]
 
-                st.write(
-                    f"{constants.CHAT_PREFIX}\n{message_typo}\n{message_emoji}\n{chat_response}"
+                task_score = min(
+                    round(
+                        sum([rest_score, emoji_score, typo_score, semantic_score])
+                        / vals_in_res
+                    ),
+                    constants.MAX_SCORE_PER_TASK,
                 )
+                st.session_state.score.append(task_score)
+                score_message = f"{res_rest}\n\nБалл за ответ: {task_score}% из {constants.MAX_SCORE_PER_TASK}%\n\n"
+
+                final_message = "\n".join(
+                    [
+                        constants.CHAT_PREFIX,
+                        message_typo,
+                        message_emoji,
+                        message_semantic,
+                        score_message,
+                    ]
+                )
+                st.write(final_message)
+
                 col1, col2 = st.columns([1, 3])
                 with col1:
                     st.button(
@@ -325,7 +397,7 @@ try:
                         "avatar": "🤖",
                         "content_type": ["text", "expand"],
                         "content": [
-                            f"{constants.CHAT_PREFIX}\n{message_typo}\n{message_emoji}\n{chat_response}",
+                            final_message,
                             target_expander,
                         ],
                     }
@@ -347,7 +419,9 @@ try:
                         "role": "assistant",
                         "avatar": "👨‍💼",
                         "content_type": ["text"],
-                        "content": [st.session_state.next_dialog[constants.CLIENT_MSG_IND]],
+                        "content": [
+                            st.session_state.next_dialog[constants.CLIENT_MSG_IND]
+                        ],
                     }
                 )
             else:
@@ -362,7 +436,7 @@ try:
             st.components.v1.html(js_scroll)
             time.sleep(0.5)
         temp.empty()
-    
+
     if st.session_state.dialog_index >= st.session_state.n_dialogs:
         with st.chat_message("assistant", avatar="🤖"):
             percent_result = round(
@@ -377,8 +451,7 @@ try:
                 f'<h1 align="center">Ваш балл: {percent_result}%</h1>',
                 unsafe_allow_html=True,
             )
-            
-            
+
             html(
                 f"""
                 <script>
@@ -389,10 +462,9 @@ try:
             )
         temp = st.empty()
         with temp:
-                st.components.v1.html(js_scroll)
-                time.sleep(0.5)
+            st.components.v1.html(js_scroll)
+            time.sleep(0.5)
         temp.empty()
-
 
 
 except Exception as e:
