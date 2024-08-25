@@ -12,3 +12,4 @@ CHAT_PREFIX = "[Оценка ответа]"
 SCORE_PATTERN = "Оценка: "
 
 EMB_SCORE_BINS = [0.89, 0.91, 0.93, 0.95]
+SUBSET_SIM_SCORE_BINS = [0.0, 0.25, 0.50, 0.75]

@@ -265,12 +265,9 @@ try:
                     # --- Semantic similarity checking
                     semantic_score, message_semantic = (
                         st.session_state.semantic_sim_processor.run(
-                            user_message=typo.TypoProcessor.clean_message(input_msg),
+                            user_message=input_msg,
                             target_message=st.session_state.next_dialog[
                                 constants.TARGET_MSG_IND
-                            ],
-                            client_message=st.session_state.next_dialog[
-                                constants.CLIENT_MSG_IND
                             ],
                         )
                     )

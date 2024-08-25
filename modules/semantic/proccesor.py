@@ -6,11 +6,14 @@ from modules.common.parsers import score as score_parser
 import constants
 from dataclasses import dataclass, field
 import numpy as np
+import re
 
+EMPTY_STR = ""
+SEP = " "
 
 @dataclass
 class SemanticSimConfig:
-    max_diff: int = field(default=5)
+    regex = re.compile("[^a-zA-Zа-яА-Я0-9\s]")
 
 
 class SemanticSimProcessor:
@@ -19,6 +22,7 @@ class SemanticSimProcessor:
         self.emb_model = GigaChatEmbeddings(
             credentials=emb_secret, verify_ssl_certs=False, scope="GIGACHAT_API_PERS"
         )
+        self.config = SemanticSimConfig()
 
     def get_cos_sim(self, user_message: str, target_message: str) -> float:
         user_mes_emg = np.array(self.emb_model.embed_query(user_message))
@@ -33,8 +37,32 @@ class SemanticSimProcessor:
         )
 
         return score
+    
+    def find_citation(self, user_message: str, target_message: str):
+        user_message_set = set(self.config.regex.sub(EMPTY_STR, user_message).lower().split(SEP))
+        target_message_set = set(self.config.regex.sub(EMPTY_STR, target_message).lower().split(SEP))
 
-    def run(self, user_message: str, target_message: str, client_message: str):
+        if user_message_set.issubset(target_message_set):
+            score = np.digitize(
+                len(user_message_set) / len(target_message_set), 
+                constants.SUBSET_SIM_SCORE_BINS, 
+                right=False,
+            ) * (
+                constants.MAX_SCORE_PER_TASK / len(constants.EMB_SCORE_BINS)
+            )
+            response = f"1. Смысловая схожесть: Цитирование. Оценка: {round(min(score, constants.MAX_SCORE_PER_TASK))}%"
+
+            return round(min(score, constants.MAX_SCORE_PER_TASK)), response
+
+        return None, None
+
+    def run(self, user_message: str, target_message: str):
+        
+        score, response = self.find_citation(user_message, target_message)
+
+        if score is not None:
+            return score, response
+            
         emb_score = self.get_cos_sim(user_message, target_message)
         sys_prompt = SystemMessage(content=semantic_prompt)
 
