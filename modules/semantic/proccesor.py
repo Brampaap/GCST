@@ -42,7 +42,6 @@ class SemanticSimProcessor:
 
         prompt_content = HumanMessage(
             content=f"""
-            {constants.CLIENT_PREFIX} {client_message}
             {constants.TARGET_PREFIX} {target_message}
             {constants.USER_PREFIX} {user_message}
             "Оценка эмбеддинговой модели:" {emb_score}
