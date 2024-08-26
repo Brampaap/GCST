@@ -20,7 +20,7 @@ class SemanticSimProcessor:
     def __init__(self, model: GigaChat, emb_secret: str):
         self.model = model
         self.emb_model = GigaChatEmbeddings(
-            credentials=emb_secret, verify_ssl_certs=False, scope="GIGACHAT_API_PERS"
+            credentials=emb_secret, verify_ssl_certs=False, scope="GIGACHAT_API_CORP"
         )
         self.config = SemanticSimConfig()
 

@@ -157,7 +157,7 @@ try:
             temperature=0.01
         )
         st.session_state.semantic_sim_processor = semantic_sim.SemanticSimProcessor(
-            model=st.session_state.chat, emb_secret=st.secrets["EMBAUTH"]
+            model=st.session_state.chat, emb_secret=st.secrets["GIGAAUTH"]
         )
         st.session_state.typo_processor = typo.TypoProcessor(model=lite_model)
 
