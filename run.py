@@ -263,7 +263,7 @@ try:
                     vals_in_res += 1
 
                     # --- Semantic similarity checking
-                    semantic_score, message_semantic = (
+                    (semantic_score, found), message_semantic = (
                         st.session_state.semantic_sim_processor.run(
                             user_message=input_msg,
                             target_message=st.session_state.next_dialog[
@@ -271,7 +271,7 @@ try:
                             ],
                         )
                     )
-                    vals_in_res += 1
+                    vals_in_res += found
 
                     # --- Emoji checking
                     emoji_prompt = SystemMessage(
@@ -324,21 +324,20 @@ try:
 
                     # --- Main analysis
                     prompt_content = f"""
-{constants.CLIENT_PREFIX} {st.session_state.next_dialog[constants.CLIENT_MSG_IND]}
-{constants.USER_PREFIX} {input_msg}\
-"""
+                        {constants.USER_PREFIX} {input_msg}
+                    """
 
                     prompt = [system_prompt, HumanMessage(content=prompt_content)]
 
                     # Request PRO model
                     res_rest = st.session_state.chat(prompt).content
-
                     rest_score = 0
                     for x in res_rest.split("\n"):
-                        rest_score += score_parser.split_parse_score(
+                        score, found = score_parser.split_parse_score(
                             x, constants.SCORE_PATTERN
                         )
-                        vals_in_res += 1
+                        rest_score += score
+                        vals_in_res += found
 
                 if emoji_score == constants.MAX_SCORE_PER_TASK:
                     message_emoji = (

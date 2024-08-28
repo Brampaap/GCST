@@ -41,7 +41,7 @@ class SemanticSimProcessor:
     def find_citation(self, user_message: str, target_message: str):
         user_message_set = set(self.config.regex.sub(EMPTY_STR, user_message.strip()).lower().split(SEP))
         target_message_set = set(self.config.regex.sub(EMPTY_STR, target_message.strip()).lower().split(SEP))
-
+        
         if user_message_set.issubset(target_message_set):
             score = np.digitize(
                 len(user_message_set) / len(target_message_set), 
@@ -61,7 +61,7 @@ class SemanticSimProcessor:
         score, response = self.find_citation(user_message, target_message)
 
         if score is not None:
-            return score, response
+            return (score, 1), response
             
         emb_score = self.get_cos_sim(user_message, target_message)
         sys_prompt = SystemMessage(content=semantic_prompt)
@@ -77,6 +77,6 @@ class SemanticSimProcessor:
         prompt = [sys_prompt, prompt_content]
 
         response = self.model(prompt).content
-        score = score_parser.split_parse_score(response, constants.SCORE_PATTERN)
-
-        return score, response
+        score_parser_responce = score_parser.split_parse_score(response, constants.SCORE_PATTERN)
+        
+        return score_parser_responce, response
