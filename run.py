@@ -86,6 +86,7 @@ try:
     st.markdown(
         """
             <style>
+            
             span {
                 word-break: break-all; 
             }
@@ -164,7 +165,6 @@ try:
         # Send 'ready' signal to LMS
         html(
             """
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
                 <script type="text/javascript">
                 window.parent.parent.postMessage({status: 'ready'}, '*');
                 var chat_container = parent.document.querySelector('.st-emotion-cache-0');
