@@ -78,5 +78,8 @@ class SemanticSimProcessor:
 
         response = self.model(prompt).content
         score_parser_responce = score_parser.split_parse_score(response, constants.SCORE_PATTERN)
+
+        if not score_parser_responce[1]:
+            response + "Оценка: 0%."
         
         return score_parser_responce, response

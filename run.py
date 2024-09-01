@@ -262,6 +262,7 @@ try:
                     )
                     vals_in_res += 1
 
+                    input_msg = input_msg.lower()
                     # --- Semantic similarity checking
                     (semantic_score, found), message_semantic = (
                         st.session_state.semantic_sim_processor.run(
@@ -338,6 +339,7 @@ try:
                         )
                         rest_score += score
                         vals_in_res += found
+
 
                 if emoji_score == constants.MAX_SCORE_PER_TASK:
                     message_emoji = (
