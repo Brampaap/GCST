@@ -5,9 +5,7 @@ def split_parse_score(response: str, split_pattern: str) -> int:
         splitted = response.split(split_pattern)
 
         if len(splitted) > 1:
-            score += int(
-                "".join(list(filter(str.isdigit, splitted[-1])))
-            )
+            score += int("".join(list(filter(str.isdigit, splitted[-1]))))
         else:
             found = 0
     except Exception as e:

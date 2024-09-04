@@ -149,13 +149,13 @@ try:
             verify_ssl_certs=False,
             scope="GIGACHAT_API_CORP",
             model="GigaChat-Pro",
-            temperature=0.01
+            temperature=0.01,
         )
         lite_model = GigaChat(
             credentials=st.secrets["GIGAAUTH"],
             scope="GIGACHAT_API_CORP",
             verify_ssl_certs=False,
-            temperature=0.01
+            temperature=0.01,
         )
         st.session_state.semantic_sim_processor = semantic_sim.SemanticSimProcessor(
             model=st.session_state.chat, emb_secret=st.secrets["GIGAAUTH"]
@@ -329,7 +329,6 @@ try:
                         {constants.USER_PREFIX} {input_msg}
                     """
 
-
                     prompt = [system_prompt, HumanMessage(content=prompt_content)]
 
                     # Request PRO model
@@ -341,7 +340,6 @@ try:
                         )
                         rest_score += score
                         vals_in_res += found
-
 
                 if emoji_score == constants.MAX_SCORE_PER_TASK:
                     message_emoji = (

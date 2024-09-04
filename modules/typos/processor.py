@@ -37,7 +37,9 @@ class TypoProcessor:
             user_message = user_message.replace(x, y)
 
         user_message = (
-            user_message[:-1] if user_message and user_message[-1] in ["!", "."] else user_message
+            user_message[:-1]
+            if user_message and user_message[-1] in ["!", "."]
+            else user_message
         )
 
         return user_message
