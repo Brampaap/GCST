@@ -20,6 +20,7 @@ class TypoProcessor:
         " !": "!",
         " ?": "?",
     }
+    EMPTY = "Empty input"
 
     def __init__(self, model: GigaChat):
         self.model = model
@@ -36,7 +37,7 @@ class TypoProcessor:
             user_message = user_message.replace(x, y)
 
         user_message = (
-            user_message[:-1] if user_message[-1] in ["!", "."] else user_message
+            user_message[:-1] if user_message and user_message[-1] in ["!", "."] else user_message
         )
 
         return user_message
@@ -70,7 +71,7 @@ class TypoProcessor:
         return response_message
 
     def run(self, user_message: str):
-        user_message = self.clean_message(user_message)
+        user_message = self.clean_message(user_message) or self.EMPTY
 
         prompt = [
             SystemMessage(
