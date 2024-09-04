@@ -325,8 +325,10 @@ try:
 
                     # --- Main analysis
                     prompt_content = f"""
+                        {constants.TARGET_PREFIX} {st.session_state.next_dialog[constants.TARGET_MSG_IND]}\n\
                         {constants.USER_PREFIX} {input_msg}
                     """
+
 
                     prompt = [system_prompt, HumanMessage(content=prompt_content)]
 
