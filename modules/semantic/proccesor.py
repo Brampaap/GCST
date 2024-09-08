@@ -86,5 +86,6 @@ class SemanticSimProcessor:
 
         if not score_parser_responce[1]:
             response + "Оценка: 0%."
+            score_parser_responce[1] = 1
 
         return score_parser_responce, response

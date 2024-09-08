@@ -1,9 +1,11 @@
 import streamlit as st
 import time
-from streamlit.components.v1 import html
+import html
+from streamlit.components.v1 import html as html_st
 import streamlit.components.v1 as components
 from modules.typos import processor as typo
 from modules.semantic import proccesor as semantic_sim
+from modules.emoji import proccesor as emoji_proc
 from modules.common.prompt import global_prompt
 from modules.common.parsers import score as score_parser
 import constants
@@ -68,6 +70,17 @@ js_scroll = """
 try:
     custom_input = components.declare_component("custom_input", path="./frontend")
 
+    def render_no_copy_text(text: str) -> str:
+        rendered = f"""
+        <div class="text-container">
+            <div class="overlay"></div>
+            <div class="no-select-text">
+                <p>{html.escape(text)}</p>
+            </div>  
+        </div>"""
+
+        return rendered
+
     def reset_last_msg():
         st.session_state.input_msg = None
         st.session_state.show_input = True
@@ -86,7 +99,26 @@ try:
     st.markdown(
         """
             <style>
-            
+            .text-container {
+                position: relative;
+                display: inline-block;
+                width: 100%;
+            }
+
+            .overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: transparent;
+                z-index: 10;
+            }
+
+            .no-select-text {
+                pointer-events: none;
+            }
+
             span {
                 word-break: break-all; 
             }
@@ -161,9 +193,12 @@ try:
             model=st.session_state.chat, emb_secret=st.secrets["GIGAAUTH"]
         )
         st.session_state.typo_processor = typo.TypoProcessor(model=lite_model)
+        st.session_state.emoji_processor = emoji_proc.EmojiProcessor(
+            model=st.session_state.chat
+        )
 
         # Send 'ready' signal to LMS
-        html(
+        html_st(
             """
                 <script type="text/javascript">
                 window.parent.parent.postMessage({status: 'ready'}, '*');
@@ -231,11 +266,17 @@ try:
                                     use_container_width=True,
                                 )
                             with col2.expander(label=msg_block["content"][i][0]):
-                                st.write(msg_block["content"][i][1])
+                                st.markdown(
+                                    render_no_copy_text(msg_block["content"][i][1]),
+                                    unsafe_allow_html=True,
+                                )
                             st.session_state.show_reset_button = False
                     else:
                         with st.expander(label=msg_block["content"][i][0]):
-                            st.write(msg_block["content"][i][1])
+                            st.markdown(
+                                render_no_copy_text(msg_block["content"][i][1]),
+                                unsafe_allow_html=True,
+                            )
 
     # Main application loop
     if st.session_state.show_input:
@@ -275,53 +316,15 @@ try:
                     vals_in_res += found
 
                     # --- Emoji checking
-                    emoji_prompt = SystemMessage(
-                        content="""Ты - тренеражер центра поддержки. Твоя цель: сформировать у сотрудника профессиональный навык написания ответов.\n\
-                                    Оцени схожесть и уместность использования эмоджи в ответе [Сотрудник] сравнительно с [Верный ответ]. \n\
-                                    Формат вывода: 1. Использование эмоджи: <комментарий>. Оценка: {0, 25, 50, 75, 100}%.
-                                    """
-                    )
-
-                    res_emoji = None
-                    emoji_in_msg = bool(emoji.distinct_emoji_list(input_msg))
-                    emoji_in_target = bool(
-                        emoji.distinct_emoji_list(
-                            st.session_state.next_dialog[constants.TARGET_MSG_IND]
+                    (emoji_score, found), message_emoji = (
+                        st.session_state.emoji_processor.run(
+                            user_message=input_msg,
+                            target_message=st.session_state.next_dialog[
+                                constants.TARGET_MSG_IND
+                            ],
                         )
                     )
-
-                    if emoji_in_msg and emoji_in_target:
-                        prompt_content = f"{constants.TARGET_PREFIX} {st.session_state.next_dialog[constants.TARGET_MSG_IND]}\n\
-                                           {constants.USER_PREFIX} {input_msg}"
-
-                        prompt = [emoji_prompt, HumanMessage(content=prompt_content)]
-
-                        res_emoji = st.session_state.chat(prompt).content
-
-                        emoji_score = 0
-                        # FIXME: Code duplication
-                        try:  # Sometimes the response format may be incorrect
-                            emoji_score += int(
-                                "".join(
-                                    list(
-                                        filter(
-                                            str.isdigit, res_emoji.split("Оценка: ")[-1]
-                                        )
-                                    )
-                                )
-                            )
-                        except Exception as e:
-                            emoji_score = (
-                                0  # FIXME: think about how to deal with such cases
-                            )
-                    elif not emoji_in_msg and not emoji_in_target:
-                        emoji_score = 100
-                    elif not emoji_in_msg and emoji_in_target:
-                        emoji_score = -1
-                    else:
-                        emoji_score = -2
-
-                    vals_in_res += 1
+                    vals_in_res += found
 
                     # --- Main analysis
                     prompt_content = f"""
@@ -340,22 +343,6 @@ try:
                         )
                         rest_score += score
                         vals_in_res += found
-
-                if emoji_score == constants.MAX_SCORE_PER_TASK:
-                    message_emoji = (
-                        res_emoji
-                        or "1. Использование эмоджи: Эмоджи не использовались. Оценка: 100%"
-                    )
-                elif emoji_score == 0:
-                    message_emoji = res_emoji
-                elif emoji_score == -1:
-                    message_emoji = "1. Использование эмоджи: В данной ситуации предусмотрено использование эмоджи. Оценка: 0%"
-                    emoji_score = 0
-                elif emoji_score == -2:
-                    message_emoji = "1. Использование эмоджи: В данной ситуации не предусмотрено использование эмоджи. Оценка: 0%"
-                    emoji_score = 0
-                else:
-                    message_emoji = res_emoji
 
                 target_expander = [
                     "Верный ответ",
@@ -389,7 +376,9 @@ try:
                         "↻ Повтор", on_click=reset_last_msg, use_container_width=True
                     )
                 with col2.expander(label=target_expander[0]):
-                    st.write(target_expander[1])
+                    st.markdown(
+                        render_no_copy_text(target_expander[1]), unsafe_allow_html=True
+                    )
 
                 st.session_state.messages.append(
                     {
@@ -429,11 +418,10 @@ try:
                 st.session_state.show_input = False
                 st.rerun()  # To hide input bar
 
-        # st.markdown('''<script>a = document.getElementsByClassName("st-emotion-cache-0"); console.log(a);</script>''', unsafe_allow_html=True)
         custom_input(disabled=False, key="input_msg")
         temp = st.empty()
         with temp:
-            st.components.v1.html(js_scroll)
+            html_st(js_scroll)
             time.sleep(0.5)
         temp.empty()
 
@@ -452,7 +440,7 @@ try:
                 unsafe_allow_html=True,
             )
 
-            html(
+            html_st(
                 f"""
                 <script>
                     window.parent.parent.postMessage({{result: {[sum(st.session_state.score), len(st.session_state.score) * constants.MAX_SCORE_PER_TASK]}}}, "*");
@@ -462,7 +450,7 @@ try:
             )
         temp = st.empty()
         with temp:
-            st.components.v1.html(js_scroll)
+            html_st(js_scroll)
             time.sleep(0.5)
         temp.empty()
 
