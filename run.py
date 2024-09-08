@@ -13,8 +13,6 @@ import constants
 from langchain.schema import HumanMessage, SystemMessage
 from langchain.chat_models.gigachat import GigaChat
 
-import emoji
-
 emoji_list = [
     "😊",
     "😊",
@@ -117,6 +115,13 @@ try:
 
             .no-select-text {
                 pointer-events: none;
+            }
+
+            .no-select-text > p {
+                -webkit-user-select: none; /* Safari */
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
             }
 
             span {
