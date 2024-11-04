@@ -3,12 +3,16 @@ import time
 import html
 from streamlit.components.v1 import html as html_st
 import streamlit.components.v1 as components
-from modules.typos import processor as typo
-from modules.semantic import proccesor as semantic_sim
-from modules.emoji import proccesor as emoji_proc
-from modules.common.prompt import global_prompt
-from modules.common.parsers import score as score_parser
+from tests.test_service_mock import service
+# TODO: сократить импорты
+from core.critique.typos import processor as typo
+from core.critique.semantic import proccesor as semantic_sim
+from core.critique.emoji import proccesor as emoji_proc
+from core.critique.common.prompt import global_prompt
+from core.critique.common.parsers import score as score_parser
 import constants
+from core.lib.exercise.default import dialog
+
 
 from langchain.schema import HumanMessage, SystemMessage
 from langchain.chat_models.gigachat import GigaChat
@@ -66,7 +70,7 @@ js_scroll = """
 """
 
 try:
-    custom_input = components.declare_component("custom_input", path="./frontend")
+    custom_input = components.declare_component("custom_input", path="build") #url="http://localhost:3000")
 
     def render_no_copy_text(text: str) -> str:
         rendered = f"""
@@ -155,30 +159,6 @@ try:
     )
 
     system_prompt = SystemMessage(content=global_prompt)
-
-    dialog = [
-        (
-            "Меня уже трясет от вашего контакт-центра. Объясните, на основании какого закона ваши сотрудники сами прерывают связь?",
-            "Сожалею, что произошла такая ситуация. Расскажите, что у Вас случилось?",
-        ),
-        (
-            "Жалобу пишите давайте!!!",
-            "Я искренне хочу Вам помочь 🙏! Расскажите, пожалуйста, с каким вопросом Вы обращались?",
-        ),
-        (
-            "Не надо спрашивать, какой у меня вопрос! Пишите жалобу!!!",
-            "Хорошо. Давайте сверим Вашу фамилию, имя, отчество и дату рождения. Назовите, пожалуйста.",
-        ),
-        (
-            "Зачем? Вы не можете сами найти? ... Александров Александр Александрович, 15 мая 1980. Что еще вам там от меня нужно?!",
-            "Спасибо, я прямо сейчас сообщу руководителю об этой ситуации, он примет все меры.",
-        ),
-        (
-            "Лишите премии нерадивого! Я не хочу в следующий раз тратить столько время на вас. Информацию передали?",
-            "Да, будьте уверены. Я желаю Вам помочь, с каким вопросом Вы обращались?",
-        ),
-        ("Нет, я уже все узнал. До свидания.", "Всего доброго!"),
-    ][:3]
 
     if "initialized" not in st.session_state:
         st.session_state.chat = GigaChat(
@@ -285,45 +265,51 @@ try:
 
     # Main application loop
     if st.session_state.show_input:
+        
         input_msg = st.session_state.input_msg
-        if input_msg and input_msg.lstrip():
+        if input_msg:
             with st.chat_message("user", avatar="👨‍🏫"):
-                st.write(input_msg)
-                st.session_state.messages.append(
-                    {
-                        "role": "user",
-                        "avatar": "👨‍🏫",
-                        "content_type": ["text"],
-                        "content": [input_msg],
-                    }
-                )
+                with st.spinner(text="Распознавание..."):
+                    asr_responce = service.process(input_msg)
+                    st.write(asr_responce)
+                    st.session_state.messages.append(
+                        {
+                            "role": "user",
+                            "avatar": "👨‍🏫",
+                            "content_type": ["text"],
+                            "content": [asr_responce],
+                        }
+                    )
 
             with st.chat_message("assistant", avatar="🤖"):
 
                 with st.spinner(text="Анализирую ваш ответ..."):
                     vals_in_res = 0
                     # --- Typo checking
-                    typo_score, message_typo = st.session_state.typo_processor.run(
-                        input_msg
-                    )
+                    # typo_score, message_typo = st.session_state.typo_processor.run(
+                    #     asr_responce
+                    # )
+                    typo_score = 100
+                    message_typo = "Результат"
                     vals_in_res += 1
 
-                    input_msg = input_msg.lower()
+                    asr_responce = asr_responce.lower()
                     # --- Semantic similarity checking
-                    (semantic_score, found), message_semantic = (
-                        st.session_state.semantic_sim_processor.run(
-                            user_message=input_msg,
-                            target_message=st.session_state.next_dialog[
-                                constants.TARGET_MSG_IND
-                            ],
-                        )
-                    )
+                    # (semantic_score, found), message_semantic = (
+                    #     st.session_state.semantic_sim_processor.run(
+                    #         user_message=asr_responce,
+                    #         target_message=st.session_state.next_dialog[
+                    #             constants.TARGET_MSG_IND
+                    #         ],
+                    #     )
+                    # )
+                    (semantic_score, found), message_semantic = (100, True), "Всё хорошо!"
                     vals_in_res += found
 
                     # --- Emoji checking
                     (emoji_score, found), message_emoji = (
                         st.session_state.emoji_processor.run(
-                            user_message=input_msg,
+                            user_message=asr_responce,
                             target_message=st.session_state.next_dialog[
                                 constants.TARGET_MSG_IND
                             ],
@@ -334,13 +320,13 @@ try:
                     # --- Main analysis
                     prompt_content = f"""
                         {constants.TARGET_PREFIX} {st.session_state.next_dialog[constants.TARGET_MSG_IND]}\n\
-                        {constants.USER_PREFIX} {input_msg}
+                        {constants.USER_PREFIX} {asr_responce}
                     """
 
                     prompt = [system_prompt, HumanMessage(content=prompt_content)]
 
                     # Request PRO model
-                    res_rest = st.session_state.chat(prompt).content
+                    res_rest = "Результат" #st.session_state.chat(prompt).content
                     rest_score = 0
                     for x in res_rest.split("\n"):
                         score, found = score_parser.split_parse_score(
@@ -423,7 +409,7 @@ try:
                 st.session_state.show_input = False
                 st.rerun()  # To hide input bar
 
-        custom_input(disabled=False, key="input_msg")
+        custom_input(key="input_msg")
         temp = st.empty()
         with temp:
             html_st(js_scroll)
