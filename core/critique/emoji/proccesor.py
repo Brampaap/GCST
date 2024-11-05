@@ -1,7 +1,7 @@
 from langchain.schema import SystemMessage, HumanMessage
 from langchain.chat_models.gigachat import GigaChat
-from modules.emoji.prompts import emoji_prompt
-from modules.common.parsers import score as score_parser
+from core.critique.emoji.prompts import emoji_prompt
+from core.critique.common.parsers import score as score_parser
 import constants
 from dataclasses import dataclass, field
 import emoji
