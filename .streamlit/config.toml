@@ -1,3 +1,0 @@
-[server]
-sslCertFile = 'certs/localhost.crt'
-sslKeyFile = 'certs/localhost.key'
