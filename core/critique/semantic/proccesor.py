@@ -1,8 +1,8 @@
 from langchain.schema import SystemMessage, HumanMessage
 from langchain.chat_models.gigachat import GigaChat
 from langchain_community.embeddings import GigaChatEmbeddings
-from modules.semantic.prompts import semantic_prompt
-from modules.common.parsers import score as score_parser
+from core.critique.semantic.prompts import semantic_prompt
+from core.critique.common.parsers import score as score_parser
 import constants
 from dataclasses import dataclass, field
 import numpy as np
