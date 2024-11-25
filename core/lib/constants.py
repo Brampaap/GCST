@@ -1,9 +1,11 @@
-SEP = " "
+MESSAGES_PER_TASK = 3  # Client -> User -> Robot
+MAX_TASK_SCORE = 100
 
+LF = "\n"
+
+# Согласно стуктуре передаваемых данных
 CLIENT_MSG_IND = 0
 TARGET_MSG_IND = 1
-MAX_TYPOS = 4
-
 
 USER_PREFIX = "[Сотрудник]"
 TARGET_PREFIX = "[Верный ответ]"

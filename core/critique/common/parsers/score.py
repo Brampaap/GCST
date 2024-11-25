@@ -1,9 +1,8 @@
 def split_parse_score(response: str, split_pattern: str) -> int:
     score = 0
     found = 1
-    try:  # Sometimes the response format may be incorrect
+    try:  # Генерация некотролируема, иногда ответ не выйдет распарсить
         splitted = response.split(split_pattern)
-
         if len(splitted) > 1:
             score += int("".join(list(filter(str.isdigit, splitted[-1]))))
         else:

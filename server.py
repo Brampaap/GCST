@@ -1,5 +1,5 @@
-from http.server import HTTPServer, SimpleHTTPRequestHandler
 import sys
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 
 class CORSHTTPRequestHandler(SimpleHTTPRequestHandler):

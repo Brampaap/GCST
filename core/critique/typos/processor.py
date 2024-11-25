@@ -1,11 +1,13 @@
 import re
-from langchain.schema import SystemMessage
-from langchain.chat_models.gigachat import GigaChat
-from core.critique.typos.promts import typo_system_prompt_template
-from constants import MAX_SCORE_PER_TASK, SEP
-from Levenshtein import distance as levenshtein_dist
-import emoji
 from dataclasses import dataclass, field
+
+import emoji
+from langchain.chat_models.gigachat import GigaChat
+from langchain.schema import SystemMessage
+from Levenshtein import distance as levenshtein_dist
+
+from constants import MAX_SCORE_PER_TASK, SEP
+from core.critique.typos.promts import typo_system_prompt_template
 
 
 @dataclass
