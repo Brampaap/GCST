@@ -7,7 +7,6 @@ from pydub import AudioSegment
 import imageio_ffmpeg as ffmpeg
 
 AudioSegment.converter = ffmpeg.get_ffmpeg_exe()
-AudioSegment.ffprobe = ffmpeg.get_ffprobe_exe()
 
 
 def load_base64_audio(audio: str) -> tuple[np.array, int]:
