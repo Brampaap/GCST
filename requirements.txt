@@ -1,6 +1,5 @@
 streamlit==1.31.0
 langchain==0.1.17
-emoji==1.7
 langchain-community==0.0.36
 langchain-core==0.1.50
 langchain-text-splitters==0.0.1
@@ -12,3 +11,4 @@ gigachat==0.1.23
 Levenshtein==0.23.0
 numpy==1.26.4
 pydub==0.25.1
+imageio-ffmpeg==0.5.1
