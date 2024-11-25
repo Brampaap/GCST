@@ -1,8 +1,8 @@
 main = """
 <style>
     /* Кнопки и верного ответа по горизонтали */
-    .st-emotion-cache-ocqkz7 {
-        align-items: center;
+    .stColumn.st-emotion-cache-12w0qpk.e1f1d6gn3 {
+        margin-top: 5px;
     }
     .stElementContainer:has(> .stAudio) {
         display:none;
