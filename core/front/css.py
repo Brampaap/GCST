@@ -1,5 +1,9 @@
 main = """
 <style>
+    /* Кнопки и верного ответа по горизонтали */
+    .st-emotion-cache-ocqkz7 {
+        align-items: center;
+    }
     .stElementContainer:has(> .stAudio) {
         display:none;
     }
@@ -18,13 +22,6 @@ main = """
         position: fixed;
         bottom: 0;
         z-index: 100;
-    }
-
-    /* Выровнять все кнопки по центру блока в котором они находятся */
-    .stButton > button{
-        display: block;
-        margin-left: auto;
-        margin-right: auto;
     }
 
     .st-emotion-cache-8ijwm3 {
