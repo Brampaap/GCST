@@ -11,4 +11,3 @@ gigachat==0.1.23
 Levenshtein==0.23.0
 numpy==1.26.4
 pydub==0.25.1
-imageio-ffmpeg==0.5.1
