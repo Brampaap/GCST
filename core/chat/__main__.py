@@ -18,14 +18,15 @@ class Chat:
         self.messages.append(message)
 
     def reset_last_message(self):
-        self.context.synchronize = True
-        self.context.current_task_index -= 1
-        self.context.current_task = self.context.tasks[self.context.current_task_index]
-        self.messages = self.messages[
-            : self.context.current_task_index * constants.MESSAGES_PER_TASK + 1
-        ]
-        self.context.continueMode = False
-        self.context.task_scores.pop()
+        if not self.context.synchronize:
+            self.context.synchronize = True
+            self.context.current_task_index -= 1
+            self.context.current_task = self.context.tasks[self.context.current_task_index]
+            self.messages = self.messages[
+                : self.context.current_task_index * constants.MESSAGES_PER_TASK + 1
+            ]
+            self.context.continueMode = False
+            self.context.task_scores.pop()
 
     def validate_context(self): ...
 
