@@ -43,6 +43,7 @@ try:  # Скрываем все видимые ошибки UI
         context.current_task_index = -1  # Индекс исполняемого диалога
         context.task_scores = []  # Счёт баллов за задания
         context.synchronize = False
+        context.streamlit_crutch = False
 
         # << ----- Инициализация моделей ----- >>
         model_config = dict(
@@ -65,7 +66,7 @@ try:  # Скрываем все видимые ошибки UI
                     model=context.pro_model,
                     emb_secret=secrets["GIGAAUTH"],
                 ),
-                critique.ССSProcessor(model=context.pro_model)
+                # critique.ССSProcessor(model=context.pro_model)
             ]
         )
 
@@ -141,7 +142,11 @@ try:  # Скрываем все видимые ошибки UI
 
         if not context.get("continueMode", True):
             # Задержка до появления кнопки записи нужно для того, чтобы ученик дослушал запись
-            time.sleep(delay_to_record)
+            if not context.streamlit_crutch: # Костыль для того, чтобы 
+                time.sleep(delay_to_record)
+            else:
+                context.streamlit_crutch = False
+
             record_button(
                 key="recorded_audio", continueMode=False, state=context.synchronize
             )
@@ -150,6 +155,7 @@ try:  # Скрываем все видимые ошибки UI
             if context.synchronize:
                 context.continueMode = False
                 context.synchronize = False
+                context.streamlit_crutch = True
                 st.rerun()
         else:
             # Переход к следующему заданию

@@ -20,6 +20,7 @@ class Chat:
     def reset_last_message(self):
         if not self.context.synchronize:
             self.context.synchronize = True
+            self.context.streamlit_crutch = True
             self.context.current_task_index -= 1
             self.context.current_task = self.context.tasks[self.context.current_task_index]
             self.messages = self.messages[
