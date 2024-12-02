@@ -1,21 +1,4 @@
-import base64
 import html
-import io
-
-import numpy as np
-from pydub import AudioSegment
-
-
-def load_base64_audio(audio: str) -> tuple[np.array, int]:
-    encoded = base64.b64decode(audio.split(",")[1])
-    audio_buffer = io.BytesIO(encoded)  # Буфер
-    # Загрузка байт в waveform
-    audio_segment = AudioSegment.from_file(audio_buffer)
-    duration_seconds = len(audio_segment) / 1000.0
-    waveform = np.array(audio_segment.get_array_of_samples())
-    sample_rate = audio_segment.frame_rate
-    return (waveform, sample_rate, duration_seconds)
-
 
 def render_no_copy_text(text: str) -> str:
     rendered = f"""

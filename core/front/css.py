@@ -41,3 +41,11 @@ main = """
     }
 </style>
         """
+
+show_audio_css = """
+<style>
+.stElementContainer:has(> .stAudio) {
+    display:block;
+}
+</style>
+"""

@@ -4,6 +4,7 @@ from test.test_service_mock import service
 import streamlit as st
 import streamlit.components.v1 as components
 from langchain.chat_models.gigachat import GigaChat
+from core.chat import TaskLoader
 
 import core.lib.streamlit.components as st_inner
 from core import critique, front
@@ -11,6 +12,7 @@ from core.chat import Chat, Message, Task
 from core.lib import constants, datacls, exercise
 from core.lib.exercise.default import dialog
 from core.lib.pipeline import Pipeline
+from core.service import Service, ServiceResponseModel
 
 # main.css
 st.markdown(
@@ -26,19 +28,20 @@ try:  # Скрываем все видимые ошибки UI
 
     # Инициализация чата
     if context.get("chat") is None:
-        context.chat = Chat(context=context, secrets=secrets)
+        context.chat = Chat(context=context)
+        context.service = Service(context=context, secrets=secrets)
 
         # << ----- Чтение входных данных ----- >>
         # Комментарий, который выводится под title, указан по требованию бизнеса
         context.comment = st.query_params.get("comment")
+        context.course_id = st.query_params.get("course_id")
 
         # Получение диалогов
-        if "data" in st.query_params:
-            raw_tasks = json.loads(st.query_params["data"])
-            assert len(raw_tasks), "No tasks provided!"
-            context.tasks = [Task(**item) for item in raw_tasks]
-        else:
+        if context.course_id:
+            context.tasks = TaskLoader(context=context, secrets=secrets).load()
+        else: # Дефолтный сеттинг задач
             context.tasks = [Task(**item) for item in dialog]
+        assert len(context.tasks), "No tasks provided!"
 
         context.current_task_index = -1  # Индекс исполняемого диалога
         context.task_scores = []  # Счёт баллов за задания
@@ -66,7 +69,10 @@ try:  # Скрываем все видимые ошибки UI
                     model=context.pro_model,
                     emb_secret=secrets["GIGAAUTH"],
                 ),
-                # critique.ССSProcessor(model=context.pro_model)
+                critique.ССSProcessor(model=context.pro_model),
+                critique.IntonProcessor(context=context),
+                critique.TempProcessor(context=context),
+                critique.FriendlinessProcessor(context=context),
             ]
         )
 
@@ -93,15 +99,32 @@ try:  # Скрываем все видимые ошибки UI
             avatar = "👨‍🏫"
             with st.chat_message(name=role, avatar=avatar):
                 with st.spinner(text="Распознавание..."):
-                    context.asr_response = service.process(record)
-                    st.write(context.asr_response)
+                    result: ServiceResponseModel = context.service.run(record, context.current_task.right_answer)
 
-                    message = Message(
-                        role=role,
-                        avatar=avatar,
-                        content_type=["text"],
-                        content=[context.asr_response],
-                    )
+                    if isinstance(result, str):
+                        st.write("Ошибка распознавания. Убедитесь в хорошем качестве записи с вашего микрофона.")
+                        st.audio(f"{secrets['ZAIKANIE_URL']}/{result}", autoplay=True)
+                        
+                        # Показать аудио пользователю
+                        st.markdown(
+                            front.show_audio_css,
+                            unsafe_allow_html=True,
+                        )
+                        raise(RuntimeError("Bad recognition"))
+                    elif result == 500:
+                        raise(RuntimeError("500 Remote Service Response"))
+                        
+                    else: 
+                        st.write(result.texts[0])
+                        context.service_result = result
+
+                        message = Message(
+                            role=role,
+                            avatar=avatar,
+                            content_type=["text"],
+                            content=[result.texts[0]],
+                        )
+
                     chat.add_message(message=message)
 
             # Вывод результата анализа

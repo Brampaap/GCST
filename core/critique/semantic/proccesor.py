@@ -64,7 +64,7 @@ class SemanticSimProcessor:
         return None, None
 
     def run(self, context):
-        asr_response = context.asr_response
+        asr_response = context.service_result.texts[0]
         right_answer = context.current_task.right_answer
         score, response = self.find_citation(asr_response, right_answer)
 
