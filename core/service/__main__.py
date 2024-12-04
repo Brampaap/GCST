@@ -37,6 +37,7 @@ class Service():
                 "file": output_buffer.read(),
             },
         )
+
         if not response.ok or response.json().get("err_code") == "1":
             return None
         response = response.json()

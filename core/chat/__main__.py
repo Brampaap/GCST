@@ -65,12 +65,12 @@ class Chat:
 
         else:
             duration_seconds = 0
-            if self.messages and self.messages[-1].content_type[-1] == "audio":
+            # if self.messages and self.messages[-1].content_type[-1] == "audio":
 
-                task_text = self.messages[-1].content[-2]
-                duration_seconds = self.estimate_speech_time(task_text)
+            #     task_text = self.messages[-1].content[-2]
+            #     duration_seconds = self.estimate_speech_time(task_text)
 
-                st.audio(message.content[-1], autoplay=True)
+            #     st.audio(message.content[-1], autoplay=True)
         return duration_seconds
 
     def estimate_speech_time(self, text: str, speech_rate: int = 150) -> float:

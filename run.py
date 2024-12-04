@@ -8,6 +8,7 @@ from core.chat import TaskLoader
 
 import core.lib.streamlit.components as st_inner
 from core import critique, front
+from core.lib.streamlit import utils
 from core.chat import Chat, Message, Task
 from core.lib import constants, datacls, exercise
 from core.lib.exercise.default import dialog
@@ -53,18 +54,24 @@ try:  # Скрываем все видимые ошибки UI
             credentials=st.secrets["GIGAAUTH"],
             verify_ssl_certs=False,
             scope="GIGACHAT_API_CORP",
-            temperature=0.01,
+            temperature=1e-8,
             model="GigaChat-Pro",
         )
 
         # Основная модель
         context.pro_model = GigaChat(**model_config)
+        # Lite модель
+        del model_config["model"]
+        context.lite_model = GigaChat(**model_config)
 
         context.pipeline = Pipeline()
 
         # Инициализация всех степов пайплайна проверки
         context.pipeline.steps.extend(
             [
+                critique.EloquenceProcessor(
+                    model=context.pro_model,
+                ),
                 critique.SemanticSimProcessor(
                     model=context.pro_model,
                     emb_secret=secrets["GIGAAUTH"],
@@ -76,13 +83,15 @@ try:  # Скрываем все видимые ошибки UI
             ]
         )
 
+        context.typo_processor = critique.TypoProcessor(model=context.lite_model)
+
         # << ----- Отправка сигнала "ready" в LMS ----- >>
         status = datacls.Status(status="ready")
         st_inner.run_js_script(status.model_dump_json())
 
     if context.comment:
         st.markdown(context.comment)
-    st.title("Тренажёр чата")
+    st.title("Тренажёр голосового чата")
 
     chat = context.chat
     pipeline = context.pipeline
@@ -110,11 +119,17 @@ try:  # Скрываем все видимые ошибки UI
                             front.show_audio_css,
                             unsafe_allow_html=True,
                         )
-                        raise(RuntimeError("Bad recognition"))
+                        st.button(
+                            "↻ Повтор",
+                            on_click=lambda: utils.reset_empty_input(context),
+                            key="empty_reset",
+                            use_container_width=True,
+                        )
+                        raise(LookupError("Bad recognition")) # Остановить выполнение без ошибок
                     elif result == 500:
                         raise(RuntimeError("500 Remote Service Response"))
-                        
-                    else: 
+                    else:
+                        _, result.texts[0] = context.typo_processor.run_model(result.texts[0])
                         st.write(result.texts[0])
                         context.service_result = result
 
@@ -125,7 +140,7 @@ try:  # Скрываем все видимые ошибки UI
                             content=[result.texts[0]],
                         )
 
-                    chat.add_message(message=message)
+                        chat.add_message(message=message)
 
             # Вывод результата анализа
             role = "assistant"
@@ -225,7 +240,8 @@ try:  # Скрываем все видимые ошибки UI
             st_inner.run_js_script(compiled_result_script)
         # Скролл вниз
         st_inner.run_js_script(front.scroll)
-
+except LookupError:
+    st.stop()
 except Exception as e:
     print(e)
     st.error("Internal server error")

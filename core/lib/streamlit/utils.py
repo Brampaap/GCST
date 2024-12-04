@@ -1,4 +1,12 @@
 import html
+import streamlit as st
+
+def reset_empty_input(context):
+    context.continueMode = False
+    context.recorded_audio = None
+    placeholder = st.empty() # Уход от долгой перезагрузки
+    with placeholder: st.write("")
+
 
 def render_no_copy_text(text: str) -> str:
     rendered = f"""

@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 
 class ServiceResponseModel(BaseModel):
-    inton_precentage: float | None = None
+    inton_percentage: float | None = None
     pause: float | None = None
-    temp: float | None = None
+    temp1: float | None = None
     dusha: list[float] | None = None
     emph: float | None = None
     texts: list[str] | None = None

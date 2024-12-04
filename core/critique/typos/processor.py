@@ -6,7 +6,7 @@ from langchain.chat_models.gigachat import GigaChat
 from langchain.schema import SystemMessage
 from Levenshtein import distance as levenshtein_dist
 
-from constants import MAX_SCORE_PER_TASK, SEP
+from core.lib import constants
 from core.critique.typos.promts import typo_system_prompt_template
 
 
@@ -48,33 +48,33 @@ class TypoProcessor:
 
     def highlight_diff(self, lstr, rstr):
         # TODO: Add word position accounting
-        rwords = set(rstr.split(SEP))
-        lwords = set(lstr.split(SEP))
+        rwords = set(rstr.split(" "))
+        lwords = set(lstr.split(" "))
 
-        rstr = SEP.join(
-            [f":green[{x}]" if x not in lwords else x for x in rstr.split(SEP)]
+        rstr = " ".join(
+            [f":green[{x}]" if x not in lwords else x for x in rstr.split(" ")]
         )
-        lstr = SEP.join(
-            [f":red[{x}]" if x not in rwords else x for x in lstr.split(SEP)]
+        lstr = " ".join(
+            [f":red[{x}]" if x not in rwords else x for x in lstr.split(" ")]
         )
         return lstr, rstr
 
     def compute_score(self, lstr, rstr) -> int:
         score = max(self.config.max_diff - levenshtein_dist(lstr, rstr), 0)
-        score *= MAX_SCORE_PER_TASK / self.config.max_diff
+        score *= constants.MAX_TASK_SCORE / self.config.max_diff
         return int(score)
 
     def prepare_response(self, lstr, rstr, score):
         lstr, rstr = self.highlight_diff(lstr, rstr)
 
-        if score == MAX_SCORE_PER_TASK:
+        if score == constants.MAX_TASK_SCORE:
             response_message = "1. Грамматика: Ошибок нет. Оценка: 100%"
         else:
             response_message = f'1. Грамматика: Найдены опечатки: "{lstr}"; \nИсправленное сообщение: "{rstr}". \nОценка: {score}%'
 
         return response_message
 
-    def run(self, user_message: str):
+    def run_model(self, user_message: str):
         user_message = self.clean_message(user_message) or self.EMPTY
 
         prompt = [
@@ -87,6 +87,11 @@ class TypoProcessor:
 
         response = self.model(prompt).content
         response = self.clean_message(response)
+
+        return user_message, response
+    
+    def run(self, user_message: str):
+        user_message, response = self.run_model(user_message)
 
         score = self.compute_score(user_message, response)
 

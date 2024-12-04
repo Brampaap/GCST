@@ -44,7 +44,7 @@ main = """
 
 show_audio_css = """
 <style>
-.stElementContainer:has(> .stAudio) {
+[data-testid="stChatMessageContent"] .stElementContainer:has(> .stAudio) {
     display:block;
 }
 </style>

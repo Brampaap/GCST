@@ -1,5 +1,6 @@
 MESSAGES_PER_TASK = 3  # Client -> User -> Robot
 MAX_TASK_SCORE = 100
+MAX_TYPOS = 4
 
 LF = "\n"
 

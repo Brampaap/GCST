@@ -1,3 +1,5 @@
+import numpy as np
+
 class IntonProcessor():
     def __init__(self, context):
         self.context = context
@@ -6,11 +8,11 @@ class IntonProcessor():
         sr = context.service_result
         sp = context.current_task.speech_params
 
-        if sr.inton_precentage is None:
+        if sr.inton_percentage is None:
             score = 0
             response = "1. Интонирование: Неопределено."
             n_found = 0
-        elif sp.inton_min <= sr.inton_precentage <= sp.inton_max:
+        elif sp.inton_min <= sr.inton_percentage <= sp.inton_max:
             score = 100
             response = "1. Интонирование: всё хорошо. Оценка: 100%."
             n_found = 1
@@ -28,15 +30,16 @@ class TempProcessor():
     def run(self, context: str):
         sr = context.service_result
         sp = context.current_task.speech_params
-        
-        if sr.temp is None:
+
+        if sr.temp1 is None:
             score = 0
             response = "1. Темп: Неопределено."
             n_found = 0
-        elif sp.temp_min <= sr.temp <= sp.temp_max:
+        elif sp.temp_min <= sr.temp1 <= sp.temp_max:
             score = 100
-            response = "1. Темп: всё хорошо. Оценка: 100%."
-        elif sp.temp_min > sr.temp: 
+            response = f"1. Темп: всё хорошо. Оценка: 100%."
+            n_found = 1
+        elif sp.temp_min > sr.temp1: 
             score = 0
             response = "1. Темп: постарайтесь быстрее. Оценка: 0%."
             n_found = 1
@@ -54,12 +57,11 @@ class FriendlinessProcessor():
 
     def run(self, context: str):
         sr = context.service_result
+        
+        friendliness_score = np.exp(sr.dusha[2]) / sum(np.exp(sr.dusha)) * 100
+        score = round(friendliness_score)
+        n_found = 1
 
-        friendliness = sr.dusha.index(max(sr.dusha))
-    
-        score = 0
-        response = f"1. Дружелюбие: ваша речь звучит {self.classes[friendliness]}"
-
-        n_found = 0
+        response = f"1. Дружелюбие:  Оценка: {score}%."
 
         return score, response, n_found
