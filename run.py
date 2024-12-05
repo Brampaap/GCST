@@ -91,10 +91,16 @@ try:  # Скрываем все видимые ошибки UI
 
     if context.comment:
         st.markdown(context.comment)
-    st.title("Тренажёр голосового чата")
+    st.header("Тренажёр голосового чата")
 
     chat = context.chat
     pipeline = context.pipeline
+
+    bg_image = st.empty()
+    if chat.n_messages == 0:
+        bg_image.image("core/front/img/chat_bg.svg", use_container_width=True)
+    else:
+        bg_image.empty()
 
     delay_to_record = chat.show()
 
