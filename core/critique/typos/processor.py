@@ -86,6 +86,7 @@ class TypoProcessor:
         ]
 
         response = self.model(prompt).content
+        response = response.split("Исправленный текст:")[-1]
         response = self.clean_message(response)
 
         return user_message, response

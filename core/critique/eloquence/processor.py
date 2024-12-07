@@ -4,11 +4,13 @@ from core.critique.common.parsers import score as score_parser
 from core.lib import constants
 
 system_prompt = """
-    Ты - лояльный тренажёр чата поддержки. 
+    Ты - тренажёр чата поддержки. 
     Оцени красочность текста сотрудника - Присутствуют ли в ответе слова-паразиты? Красочна или бедна речь? Грамотно ли построена фраза? Пременены слишком сложные обороты или термины?
     
     <Комментарий> - твой комментарий, как эксперта.
     [Сотрудник] - распознанный голосовой ответ сотрудника, его надо оценить.
+    [Верный ответ] - сотрудник должен ответить похожим образом.
+    Если ответ сотрудника соотвествует верному ответу - оценка 100.
     Игнорируй грамматические ошибки.
 
     <Оценка> - выбери одно из значений {0, 25, 50, 75, 100}.
@@ -26,12 +28,14 @@ class EloquenceProcessor:
     def run(self, context: str):
 
         asr_response = context.service_result.texts[0]
+        right_answer = context.current_task.right_answer
 
         prompt = [
             SystemMessage(content=system_prompt),
             HumanMessage(
                 content=f"""
-                        {constants.USER_PREFIX}\\s{asr_response}
+                        {constants.TARGET_PREFIX} {right_answer}
+                        {constants.USER_PREFIX} {asr_response}
                         """
             ),
         ]

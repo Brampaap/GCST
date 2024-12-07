@@ -9,10 +9,10 @@ audio_1 = base64.b64encode(open(dialog_audio[0], "rb").read()).decode("utf-8")
 audio_2 = base64.b64encode(open(dialog_audio[1], "rb").read()).decode("utf-8")
 
 sp_settings = {
-    "inton_min": 9,
-    "inton_max": 99,
+    "inton_min": 40,
+    "inton_max": 60,
     "temp_min": 3,
-    "temp_max": 12,
+    "temp_max": 5,
     "show_friendliness": 1,
 }
 

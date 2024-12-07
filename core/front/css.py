@@ -1,5 +1,10 @@
 main = """
 <style>
+    @media (max-width: 50.5rem) {
+        .stMainBlockContainer {
+            max-width: None;
+        }
+    }
     /* Кнопки и верного ответа по горизонтали */
     .stColumn.st-emotion-cache-12w0qpk.e1f1d6gn3 {
         margin-top: 5px;

@@ -114,7 +114,7 @@ try:  # Скрываем все видимые ошибки UI
             avatar = "👨‍🏫"
             with st.chat_message(name=role, avatar=avatar):
                 with st.spinner(text="Распознавание..."):
-                    result: ServiceResponseModel = context.service.run(record, context.current_task.right_answer)
+                    result: int | ServiceResponseModel | str = context.service.run(record, context.current_task.right_answer)
 
                     if isinstance(result, str):
                         st.write("Ошибка распознавания. Убедитесь в хорошем качестве записи с вашего микрофона.")

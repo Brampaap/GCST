@@ -4,7 +4,7 @@ from core.critique.common.parsers import score as score_parser
 from core.lib import constants
 
 system_prompt = """
-    Ты - лояльный тренажёр чата поддержки. 
+    Ты - тренажёр чата поддержки. 
     Оцени клиентоориентированность - это уровень сервиса и вежливости в ответе сотрудника. 
     Насколько уважительным было обращение к клиенту, или это просто сухая отписка или даже звучит грубо?
 
@@ -38,8 +38,8 @@ class ССSProcessor:
             SystemMessage(content=system_prompt),
             HumanMessage(
                 content=f"""
-                        {constants.TARGET_PREFIX}\\s{right_answer}\n\n
-                        {constants.USER_PREFIX}\\s{asr_response}
+                        {constants.TARGET_PREFIX} {right_answer}
+                        {constants.USER_PREFIX} {asr_response}
                         """
             ),
         ]

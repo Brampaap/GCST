@@ -9,7 +9,7 @@ class Service():
         self.context = context
         self.secrets = secrets
 
-    def make_query(self, audio: str, right_answer: str):
+    def make_query(self, audio: str, right_answer: str) -> None | ServiceResponseModel:
         
         encoded = base64.b64decode(audio.split(",")[1])
         a_segment = AudioSegment.from_file(io.BytesIO(encoded))
