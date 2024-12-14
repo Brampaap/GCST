@@ -84,11 +84,22 @@ try:  # Скрываем все видимые ошибки UI
                     emb_secret=secrets["GIGAAUTH"],
                 ),
                 critique.ССSProcessor(model=context.pro_model),
-                critique.IntonProcessor(context=context),
-                critique.TempProcessor(context=context),
-                critique.FriendlinessProcessor(context=context),
             ]
         )
+
+        extra_steps_features = context.tasks[0].speech_params
+        if extra_steps_features.inton_max is not None and extra_steps_features.inton_min is not None:
+            context.pipeline.steps.append(
+                critique.IntonProcessor(context=context)
+            )
+        if extra_steps_features.temp_max is not None and extra_steps_features.temp_min is not None:
+            context.pipeline.steps.append(
+                critique.TempProcessor(context=context)
+            )
+        if extra_steps_features.show_friendliness == "1":
+            context.pipeline.steps.append(
+                critique.FriendlinessProcessor(context=context)
+            )
 
         context.typo_processor = critique.TypoProcessor(model=context.lite_model)
 
