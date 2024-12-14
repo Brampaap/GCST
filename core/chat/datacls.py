@@ -32,11 +32,11 @@ class AnswerText(BaseModel):
     weight: int
 
 class SpeechParams(BaseModel):
-    inton_min: int
-    inton_max: int
-    temp_min: int
-    temp_max: int
-    show_friendliness: int
+    inton_min: int | None = None
+    inton_max: int | None = None
+    temp_min: int | None = None
+    temp_max: int | None = None
+    show_friendliness: int | None = None
 
 class Task(BaseModel):
     message: str

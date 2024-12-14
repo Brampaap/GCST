@@ -15,6 +15,12 @@ from core.lib.exercise.default import dialog
 from core.lib.pipeline import Pipeline
 from core.service import Service, ServiceResponseModel
 
+# Общие настройки страницы
+st.set_page_config(
+    page_title="RapportTop",
+    page_icon="👨‍💼"
+)
+
 # main.css
 st.markdown(
     front.main_css,
@@ -35,7 +41,7 @@ try:  # Скрываем все видимые ошибки UI
         # << ----- Чтение входных данных ----- >>
         # Комментарий, который выводится под title, указан по требованию бизнеса
         context.comment = st.query_params.get("comment")
-        context.course_id = st.query_params.get("course_id")
+        context.course_id = st.query_params.get("course_id", 3)
 
         # Получение диалогов
         if context.course_id:
@@ -44,6 +50,7 @@ try:  # Скрываем все видимые ошибки UI
             context.tasks = [Task(**item) for item in dialog]
         assert len(context.tasks), "No tasks provided!"
 
+        context.progress_text = "" # Дефолтный контент прогресс бара
         context.current_task_index = -1  # Индекс исполняемого диалога
         context.task_scores = []  # Счёт баллов за задания
         context.synchronize = False
@@ -55,7 +62,7 @@ try:  # Скрываем все видимые ошибки UI
             verify_ssl_certs=False,
             scope="GIGACHAT_API_CORP",
             temperature=1e-8,
-            model="GigaChat-Pro",
+            model="GigaChat-Max",
         )
 
         # Основная модель
@@ -92,15 +99,19 @@ try:  # Скрываем все видимые ошибки UI
     if context.comment:
         st.markdown(context.comment)
     st.header("Тренажёр голосового чата")
-
+    
     chat = context.chat
     pipeline = context.pipeline
 
-    bg_image = st.empty()
-    if chat.n_messages == 0:
-        bg_image.image("core/front/img/chat_bg.svg", use_container_width=True)
-    else:
-        bg_image.empty()
+    top_container = st.empty()
+    # Not comment используется для адаптации на телефоне
+    if chat.n_messages == 0 and not context.comment:
+        top_container.image("core/front/img/chat_bg.svg", use_container_width=True)
+    elif chat.n_messages == 0 and context.comment:
+        top_container.empty()
+    elif context.current_task_index + 1 <= len(context.tasks):
+        progress_text = f"Прогресс: {context.current_task_index + 1}/{len(context.tasks)}"
+        top_container.progress((context.current_task_index + 1) / len(context.tasks), text=progress_text)
 
     delay_to_record = chat.show()
 
@@ -248,7 +259,7 @@ try:  # Скрываем все видимые ошибки UI
         st_inner.run_js_script(front.scroll)
 except LookupError:
     st.stop()
-except Exception as e:
-    print(e)
-    st.error("Internal server error")
-    st.stop()
+# except Exception as e:
+#     print(e)
+#     st.error("Internal server error")
+#     st.stop()

@@ -1,6 +1,7 @@
 import streamlit as st
 from streamlit.runtime.secrets import Secrets
 import requests
+from io import BytesIO
 import re
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
@@ -32,7 +33,30 @@ class Chat:
             self.context.continueMode = False
             self.context.task_scores.pop()
 
-    def validate_context(self): ...
+    @staticmethod
+    @st.cache_data(show_spinner="Загрузка аудио...")
+    def download_audio_with_progress(url: str) -> BytesIO:
+        """
+        Добавлено предварительное скачивание для явного обозначения этого процесса.
+        Пользователи с медленным интернетом ожидают в недоступном приложении до 20 секунд,
+        нужна индикация.
+        """
+        chunk_size = 15 * 1024 * 1024
+
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+
+        audio_data = BytesIO()
+
+        downloaded = 0
+        for chunk in response.iter_content(chunk_size=chunk_size):
+            if chunk:
+                audio_data.write(chunk)
+                downloaded += len(chunk)
+
+        audio_data.seek(0)
+
+        return audio_data
 
     def show(self):
         for i, message in enumerate(self.messages, start=1):
@@ -66,11 +90,11 @@ class Chat:
         else:
             duration_seconds = 0
             if self.messages and self.messages[-1].content_type[-1] == "audio":
-
                 task_text = self.messages[-1].content[-2]
+                audio_data = Chat.download_audio_with_progress(message.content[-1])
                 duration_seconds = self.estimate_speech_time(task_text)
-
-                st.audio(message.content[-1], autoplay=True)
+                st.audio(audio_data, autoplay=True)
+                
         return duration_seconds
 
     def estimate_speech_time(self, text: str, speech_rate: int = 150) -> float:
