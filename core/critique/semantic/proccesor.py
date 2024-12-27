@@ -57,7 +57,7 @@ class SemanticSimProcessor:
                 self.config.SUBSET_SIM_SCORE_BINS,
                 right=False,
             ) * (constants.MAX_TASK_SCORE / len(self.config.EMB_SCORE_BINS))
-            response = f"1. Смысловая схожесть: Цитирование. Оценка: {round(min(score, constants.MAX_TASK_SCORE))}%"
+            response = f"1. Смысловая схожесть: Цитирование. Оценка - {round(min(score, constants.MAX_TASK_SCORE))}%"
 
             return round(min(score, constants.MAX_TASK_SCORE)), response
 
@@ -90,7 +90,7 @@ class SemanticSimProcessor:
         )
 
         if not score_parser_responce[1]:
-            response + "Оценка: 0%."
+            response + "Оценка - 0%."
             score_parser_responce[1] = 1
 
         return (

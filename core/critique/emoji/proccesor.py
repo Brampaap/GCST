@@ -48,16 +48,16 @@ class EmojiProcessor:
             )
 
             if not score_parser_responce[1]:
-                response + "Оценка: 0%."
+                response + "Оценка - 0%."
                 score_parser_responce[1] = 1
 
             return score_parser_responce, response
 
         elif not emoji_in_msg and not emoji_in_target:
             emoji_score = 100
-            response = "1. Использование эмоджи: Эмоджи не использовались. Оценка: 100%"
+            response = "1. Использование эмоджи: Эмоджи не использовались. Оценка - 100%"
         else:
             emoji_score = 0
-            response = "1. Использование эмоджи: В данной ситуации предусмотрено использование эмоджи. Оценка: 0%"
+            response = "1. Использование эмоджи: В данной ситуации предусмотрено использование эмоджи. Оценка - 0%"
 
         return (emoji_score, 1), response

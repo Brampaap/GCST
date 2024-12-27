@@ -68,9 +68,9 @@ class TypoProcessor:
         lstr, rstr = self.highlight_diff(lstr, rstr)
 
         if score == constants.MAX_TASK_SCORE:
-            response_message = "1. Грамматика: Ошибок нет. Оценка: 100%"
+            response_message = "1. Грамматика: Ошибок нет. Оценка - 100%"
         else:
-            response_message = f'1. Грамматика: Найдены опечатки: "{lstr}"; \nИсправленное сообщение: "{rstr}". \nОценка: {score}%'
+            response_message = f'1. Грамматика: Найдены опечатки: "{lstr}"; \nИсправленное сообщение: "{rstr}". \nОценка - {score}%'
 
         return response_message
 

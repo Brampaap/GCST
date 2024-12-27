@@ -229,9 +229,6 @@ try:  # Скрываем все видимые ошибки UI
             )
             chat.add_message(message)
             record_button(key="continueMode", continueMode=True)
-        # Скролл вниз
-        st_inner.run_js_script(front.scroll)
-
     else:
         # Вывод итогового результата и отправка его LMS
         role = "assistant"
@@ -255,11 +252,12 @@ try:  # Скрываем все видимые ошибки UI
                 response_json=response.model_dump_json()
             )
             st_inner.run_js_script(compiled_result_script)
-        # Скролл вниз
-        st_inner.run_js_script(front.scroll)
 except LookupError:
     st.stop()
 # except Exception as e:
 #     print(e)
 #     st.error("Internal server error")
 #     st.stop()
+finally:
+    # Скролл вниз
+    st_inner.run_js_script(front.scroll)
