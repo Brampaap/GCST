@@ -71,13 +71,12 @@ class FriendlinessProcessor():
     def run(self, context: str):
         sr = context.service_result
         sp = context.current_task.speech_params
-        
         if sr.friendliness is None or sp.show_friendliness is None or int(sp.show_friendliness) != 1:
             return 0, "", 0
         
         score = round(sr.friendliness * 100)
         n_found = 1
 
-        response = f""
+        response = f"1. Дружелюбие: Оценка - {score}%."
 
         return score, response, n_found
