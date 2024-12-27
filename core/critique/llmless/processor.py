@@ -8,7 +8,7 @@ class IntonProcessor():
         sr = context.service_result
         sp = context.current_task.speech_params
 
-        if sr.inton_percentage is None:
+        if sr.inton_percentage is None or sp.inton_min is None or sp.inton_max is None:
             return 0, "1. Интонирование: Неопределено.", 0
 
         inton_percentage = round(sr.inton_percentage, 1)
@@ -39,7 +39,7 @@ class TempProcessor():
         sr = context.service_result
         sp = context.current_task.speech_params
 
-        if sr.temp1 is None:
+        if sr.temp1 is None or sp.temp_min is None or sp.temp_max is None:
             return 0, "1. Темп: Неопределено.", 0
 
         temp = round(sr.temp1, 1)
@@ -69,6 +69,10 @@ class FriendlinessProcessor():
 
     def run(self, context: str):
         sr = context.service_result
+        sp = context.current_task.speech_params
+        
+        if sr.friendliness is None or sp.show_friendliness is None or int(sp.show_friendliness) != 1:
+            return 0, "1. Дружелюбие: Неопределено.", 0
         
         score = round(sr.friendliness * 100)
         n_found = 1
