@@ -52,6 +52,10 @@ class ССSProcessor:
             score_parser_response = score_parser.split_parse_score(
                 task, constants.SCORE_PATTERN
             )
+
+            if not score_parser_response[1]:
+                raise constants.GenerationError
+
             score += score_parser_response[0]
             n_found += score_parser_response[1]
 
