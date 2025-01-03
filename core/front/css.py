@@ -1,5 +1,8 @@
 main = """
 <style>
+    [data-testid='stHeaderActionElements'] {
+		display: none;
+	}
     .stAppHeader {
         display: none;
     }
