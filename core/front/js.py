@@ -7,6 +7,6 @@ scroll = """
 
 post_message_template = """
 <script>
-    window.parent.parent.postMessage({response_json}, "*");
+    window.parent.parent.postMessage({response_json}, "http://localhost:8006");
 </script>
 """

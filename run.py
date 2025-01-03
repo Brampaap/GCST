@@ -95,7 +95,11 @@ try:  # Скрываем все видимые ошибки UI
 
         # << ----- Отправка сигнала "ready" в LMS ----- >>
         status = datacls.Status(status="ready")
-        st_inner.run_js_script(status.model_dump_json())
+        compiled_status_script = front.post_message_template.format(
+            response_json=status.model_dump_json()
+        )
+        
+        st_inner.run_js_script(compiled_status_script)
 
     if context.comment:
         st.markdown(context.comment)
@@ -164,19 +168,23 @@ try:  # Скрываем все видимые ошибки UI
             role = "assistant"
             avatar = "🤖"
             with st.chat_message(name=role, avatar=avatar):
-                with st.spinner(text="Анализирую ваш ответ..."):
-                    scores, responses, step_success = pipeline.run(context=context)
-                task_score = min(
-                    round(sum(scores) / sum(step_success)),
-                    constants.MAX_TASK_SCORE,
-                )
-                score_string = exercise.score_message.format(
-                    task_score=task_score, max_score=constants.MAX_TASK_SCORE
-                )
-                text = constants.LF.join(
-                    [constants.CHAT_PREFIX, *responses, score_string]
-                )
-
+                try:
+                    with st.spinner(text="Анализирую ваш ответ..."):
+                        scores, responses, step_success = pipeline.run(context=context)
+                    task_score = min(
+                        round(sum(scores) / sum(step_success)),
+                        constants.MAX_TASK_SCORE,
+                    )
+                    score_string = exercise.score_message.format(
+                        task_score=task_score, max_score=constants.MAX_TASK_SCORE
+                    )
+                    text = constants.LF.join(
+                        [constants.CHAT_PREFIX, *responses, score_string]
+                    )
+                except GenerationError:
+                    text = "Ошибка генерации: Использованы недопустимые слова или фразы, попробуйте ещё раз."
+                    task_score = 0
+                    
                 right_answer_expander = {
                     "label": "Верный ответ",
                     "text": context.current_task.right_answer,
@@ -255,8 +263,6 @@ try:  # Скрываем все видимые ошибки UI
             st_inner.run_js_script(compiled_result_script)
 except LookupError:
     st.stop()
-except GenerationError:
-    st.error("Ошибка генерации: Использованы недопустимые слова или фразы, попробуйте ещё раз.")
 except Exception as e:
     st.error("Внутреняя ошибка сервиса.")
     st.stop()
