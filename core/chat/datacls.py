@@ -12,7 +12,7 @@ class Message(BaseModel):
 
     @model_validator(mode="after")
     def validate_content(self):
-        white_list = ("text", "expand", "audio")
+        white_list = ("text", "expand", "audio", "recognition_error")
         if self.content_type == "text" and not isinstance(self.content, str):
             raise ValueError("Content must be a string when content_type is 'text'")
         elif self.content_type == "expand" and not isinstance(self.content, dict):

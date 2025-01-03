@@ -10,6 +10,7 @@ from streamlit.runtime.state.session_state_proxy import SessionStateProxy
 
 from core.chat.datacls import Message, Task
 from core.lib import constants
+from core import front
 from core.lib.streamlit import utils
 
 
@@ -32,6 +33,10 @@ class Chat:
             ]
             self.context.continueMode = False
             self.context.task_scores.pop()
+
+    def reset_last_recognition(self):
+        self.context.continueMode = False
+        self.messages.pop()
 
     @staticmethod
     @st.cache_data(show_spinner="Загрузка аудио...")
@@ -86,6 +91,22 @@ class Chat:
                                     utils.render_no_copy_text(text=content["text"]),
                                     unsafe_allow_html=True,
                                 )
+                    elif content_type == "recognition_error":
+                        st.write("Ошибка распознавания. Убедитесь в хорошем качестве записи с вашего микрофона.")
+                        st.audio(content, autoplay=True)
+
+                        st.markdown(
+                            front.show_audio_css,
+                            unsafe_allow_html=True,
+                        )
+                        st.button(
+                            "↻ Повтор",
+                            on_click=lambda: self.reset_last_recognition(),
+                            key="empty_reset",
+                            use_container_width=True,
+                        )
+                        raise(LookupError("Bad recognition"))
+
 
         else:
             duration_seconds = 0
@@ -145,7 +166,6 @@ class TaskLoader():
         response = requests.post(self.url, data=data)
 
         if not response.ok:
-            print(response.json())
             response.raise_for_status()
         else: 
             response = response.json()["data"]["questions"]

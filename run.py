@@ -133,21 +133,15 @@ try:  # Скрываем все видимые ошибки UI
                     result: int | ServiceResponseModel | str = context.service.run(record, context.current_task.right_answer)
 
                     if isinstance(result, str):
-                        st.write("Ошибка распознавания. Убедитесь в хорошем качестве записи с вашего микрофона.")
-                        st.audio(f"{secrets['ZAIKANIE_URL']}/{result}", autoplay=True)
-                        
-                        # Показать аудио пользователю
-                        st.markdown(
-                            front.show_audio_css,
-                            unsafe_allow_html=True,
+                        message = Message(
+                            role=role,
+                            avatar=avatar,
+                            content_type=["recognition_error"],
+                            content=[f"{secrets['ZAIKANIE_URL']}/{result}"],
                         )
-                        st.button(
-                            "↻ Повтор",
-                            on_click=lambda: utils.reset_empty_input(context),
-                            key="empty_reset",
-                            use_container_width=True,
-                        )
-                        raise(LookupError("Bad recognition")) # Остановить выполнение без ошибок
+                        chat.add_message(message=message)
+                        context.recorded_audio = None
+                        st.rerun()
                     elif result == 500:
                         raise(RuntimeError("500 Remote Service Response"))
                     else:
@@ -184,7 +178,6 @@ try:  # Скрываем все видимые ошибки UI
                 except GenerationError:
                     text = "Ошибка генерации: Использованы недопустимые слова или фразы, попробуйте ещё раз."
                     task_score = 0
-                    
                 right_answer_expander = {
                     "label": "Верный ответ",
                     "text": context.current_task.right_answer,

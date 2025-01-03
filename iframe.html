@@ -45,13 +45,14 @@
             let comment = "Somebody once told me the world is gonna roll me. Somebody once told me the world is gonna roll me. Somebody once told me the world is gonna roll me. Somebody once told me the world is gonna roll me. Somebody once told me the world is gonna roll me. Somebody once told me the world is gonna roll me. Somebody once told me the world is gonna roll me."
 
 
-            var url = "http://localhost:8501?data=" + encodedJson + "&comment=" + comment;
+            var url = "https://localhost:8501?data=" + encodedJson + "&comment=" + comment;
 
             var iframe = document.createElement('iframe');
             iframe.src = url;
             iframe.width = "500";
             iframe.height = "1000";
             iframe.frameBorder = "0";
+            iframe.allow = "microphone";
 
             var container = document.getElementById('iframeContainer');
             container.appendChild(iframe);
