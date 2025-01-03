@@ -9,6 +9,7 @@ from langchain_community.embeddings import GigaChatEmbeddings
 from core.critique.common.parsers import score as score_parser
 from core.critique.semantic.prompts import semantic_prompt
 from core.lib import constants
+from core.lib.constants import GenerationError
 
 EMPTY_STR = ""
 SEP = " "
@@ -88,10 +89,8 @@ class SemanticSimProcessor:
         score_parser_responce = score_parser.split_parse_score(
             response, constants.SCORE_PATTERN
         )
-
         if not score_parser_responce[1]:
-            response + "Оценка - 0%."
-            score_parser_responce[1] = 1
+            raise GenerationError
 
         return (
             score_parser_responce[0],

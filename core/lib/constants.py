@@ -13,3 +13,6 @@ TARGET_PREFIX = "[Верный ответ]"
 CLIENT_PREFIX = "[Клиент]"
 CHAT_PREFIX = "[Оценка ответа]"
 SCORE_PATTERN = "Оценка - "
+
+class GenerationError(Exception):
+    pass

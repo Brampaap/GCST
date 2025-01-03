@@ -1,7 +1,7 @@
 scroll = """
 <script>
-    itemsScrollTo = parent.window.document.getElementsByClassName("stButton"); 
-    itemsScrollTo[itemsScrollTo.length-1].scrollIntoView();
+    itemsScrollTo = parent.window.document.querySelector('.stMain'); 
+    itemsScrollTo.scrollTo(0, itemsScrollTo.scrollHeight);
 </script>
 """
 

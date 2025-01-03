@@ -14,6 +14,7 @@ from core.lib import constants, datacls, exercise
 from core.lib.exercise.default import dialog
 from core.lib.pipeline import Pipeline
 from core.service import Service, ServiceResponseModel
+from core.lib.constants import GenerationError
 
 # Общие настройки страницы
 st.set_page_config(
@@ -98,7 +99,7 @@ try:  # Скрываем все видимые ошибки UI
 
     if context.comment:
         st.markdown(context.comment)
-    st.header("Тренажёр голосового чата")
+    st.header("Речевой AI-тренажер")
     
     chat = context.chat
     pipeline = context.pipeline
@@ -254,10 +255,11 @@ try:  # Скрываем все видимые ошибки UI
             st_inner.run_js_script(compiled_result_script)
 except LookupError:
     st.stop()
-# except Exception as e:
-#     print(e)
-#     st.error("Internal server error")
-#     st.stop()
+except GenerationError:
+    st.error("Ошибка генерации: Использованы недопустимые слова или фразы, попробуйте ещё раз.")
+except Exception as e:
+    st.error("Внутреняя ошибка сервиса.")
+    st.stop()
 finally:
     # Скролл вниз
     st_inner.run_js_script(front.scroll)

@@ -64,6 +64,9 @@ main = """
         .stProgress {
             width: 92%;
         }
+		ol li {
+		  margin-left: -10px !important;
+		}
     }
 </style>
         """

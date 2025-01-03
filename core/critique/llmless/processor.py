@@ -21,15 +21,15 @@ class IntonProcessor():
         inton_max_bound = sp.inton_max + 0.5
 
         if inton_min_bound <= inton_percentage <= inton_max_bound:
-            return 100, f"1. Интонирование: Оценка - 100%.", 1
+            return 100, f"1. Интонация заинтересованности: Оценка - 100%.", 1
         
         if inton_percentage < inton_min_bound:
             score = scores[np.digitize(inton_percentage, upper_bound, right=False)]
-            return score, f"1. Интонирование: постарайтесь говорить выразительнее. Оценка - {score}%.", 1
+            return score, f"1. Интонация заинтересованности: постарайтесь говорить выразительнее. Оценка - {score}%.", 1
         
         if inton_percentage > inton_min_bound:
             score = scores[np.digitize(inton_percentage, lower_bound, right=False)]
-            return score, f"1. Интонирование: постарайтесь говорить выразительнее. Оценка - {score}%.", 1
+            return score, f"1. Интонация заинтересованности: постарайтесь говорить выразительнее. Оценка - {score}%.", 1
 
 class TempProcessor():
     def __init__(self, context):
@@ -77,6 +77,6 @@ class FriendlinessProcessor():
         score = round(sr.friendliness * 100)
         n_found = 1
 
-        response = f"1. Дружелюбие: Оценка - {score}%."
+        response = f"1. Интонация дружелюбия: Оценка - {score}%."
 
         return score, response, n_found
